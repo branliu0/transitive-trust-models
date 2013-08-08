@@ -4,24 +4,33 @@ from scipy import stats
 import utils
 
 class TrustGraph(nx.DiGraph):
+    """ A networkx.DiGraph object that represents a trust graph.
+
+    In particular, this graph is guaranteed to have a float in [0, 1] set as
+    the 'agent_type' attribute for every node. Every directed edge (i, j) is
+    guaranteed to have a float in [0, 1] for the 'weight' attribute representing
+    the subjective trust of agent i for agent j. Every edge also has an
+    'inv_weight' attribute which is the reciprocal of the 'weight' attribute
+    for the convenience of the Shortest Path transitive trust model.
+    """
     def __init__(self, num_nodes, agent_type_prior, edge_strategy,
                      edges_per_node, edge_weight_strategy, num_weight_samples):
         """
         Args:
-            num_nodes - Number of nodes in this graph.
-            agent_type_prior -
+            num_nodes: Number of nodes in this graph.
+            agent_type_prior:
                 'uniform': Selected from Unif[0, 1]
                 'normal': Selected from Normal[0.5, 1] truncated to [0, 1]
                 'beta': Selected from Beta[2, 2]
-            edge_strategy -
+            edge_strategy:
                 'uniform': Neighbors are uniformly selected
                 'cluster': High types are more likely to connect to high types
-            edges_per_node - The number of outgoing edges each node has.
-            edge_weight_strategy -
+            edges_per_node: The number of outgoing edges each node has.
+            edge_weight_strategy:
                 'sample': Sample from true agent type
                 'noisy': Low types more likely to sample from Bernoulli[0.5]
                 'prior': Low types more likely to sampel from prior distribution
-            num_weight_samples - Number of times to sample for determining
+            num_weight_samples: Number of times to sample for determining
                 edge weights.
         Returns:
             A fully initialized TrustGraph object, generated using the
@@ -50,8 +59,8 @@ class TrustGraph(nx.DiGraph):
     def initialize_agent_types(num_nodes, agent_type_prior):
         """
         Args:
-            num_nodes - Number of agents.
-            agent_type_prior - 'uniform', 'normal', or 'beta'. See docs for
+            num_nodes: Number of agents.
+            agent_type_prior: 'uniform', 'normal', or 'beta'. See docs for
                 TrustGraph.create_graph.
         Returns:
             An array of length num_nodes with floats in [0, 1] repesenting
@@ -68,13 +77,13 @@ class TrustGraph(nx.DiGraph):
 
     @staticmethod
     def initialize_edges(agent_types, edge_strategy, edges_per_node):
-        # TODO: 'cluster' strategy can be greatly optimized.
+        # TODO: 'cluster' strategy can be optimized.
         """
         Args:
-            agent_types - Array of floats in [0, 1] representing agent types.
-            edge_strategy - 'uniform' or 'cluster'. See docs for
+            agent_types: Array of floats in [0, 1] representing agent types.
+            edge_strategy: 'uniform' or 'cluster'. See docs for
                 TrustGraph.create_graph.
-            edges_per_node - The number of outgoing edges per node.
+            edges_per_node: The number of outgoing edges per node.
         Returns:
             An array of arrays of integers $a$, where $j \in a[i]$ indicates
             an outgoing edge from $i$ to $j$. The arrays are zero-based. This
@@ -113,11 +122,11 @@ class TrustGraph(nx.DiGraph):
                                 agent_type_prior, num_samples):
         """
         Args:
-            agent_types - A list of floats in [0, 1] representing the agent types.
-            edges - A list of adjacency lists representing the edges.
-            edge_weight_strategy - 'sample', 'noisy', or 'prior'
-            agent_type_prior - 'uniform', 'normal', or 'beta'
-            num_samples - The number of samples used for defining the weights.
+            agent_types: A list of floats in [0, 1] representing the agent types.
+            edges: A list of adjacency lists representing the edges.
+            edge_weight_strategy: 'sample', 'noisy', or 'prior'
+            agent_type_prior: 'uniform', 'normal', or 'beta'
+            num_samples: The number of samples used for defining the weights.
         Returns:
             An adjacency matrix of edge weights. None specifies the absence
             of an edge. Otherwise the matrix entry contains the weight of that
