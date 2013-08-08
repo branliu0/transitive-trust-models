@@ -67,3 +67,7 @@ plt.plot(stats.stats.nanmean(weights.astype(float), 0)); plt.plot(at);
 weights = TrustGraph.initialize_edge_weights(at, edges, 'prior', 'beta', 10)
 plt.plot(stats.stats.nanmean(weights.astype(float), 0)); plt.plot(at);
 ```
+
+### utils.softmax\_rv
+
+TODO

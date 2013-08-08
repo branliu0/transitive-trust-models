@@ -8,6 +8,12 @@ def clamp(val, minval, maxval):
     return min(max(val, minval), maxval)
 
 
+def normalize(array):
+    """ Normalizes an array of values so that the sum of the array is unity. """
+    sum = float(sum(array))
+    return [x / sum for x in array]
+
+
 def softmax_rv(masses, values=None, z=0.1):
     """ Returns a discrete random variable based on the softmax function. """
     nums = np.exp(np.array(masses) / z)

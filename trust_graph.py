@@ -38,17 +38,26 @@ class TrustGraph(nx.DiGraph):
         """
         super(TrustGraph, self).__init__()
 
+        self.num_nodes            = num_nodes
+        self.agent_type_prior     = agent_type_prior
+        self.edge_strategy        = edge_strategy
+        self.edges_per_node       = edges_per_node
+        self.edge_weight_strategy = edge_weight_strategy
+        self.num_weight_samples   = num_weight_samples
+
         # First generate our agent types, edges, and edge weights
-        agent_types = TrustGraph.initialize_agent_types(
+        self.agent_types = TrustGraph.initialize_agent_types(
             num_nodes, agent_type_prior)
+        # We sort the agents just to make visual inspections more convenient
+        self.agent_types = sorted(self.agent_types)
         edges = TrustGraph.initialize_edges(
-            agent_types, edge_strategy, edges_per_node)
+            self.agent_types, edge_strategy, edges_per_node)
         edge_weights = TrustGraph.initialize_edge_weights(
-            agent_types, edges, edge_weight_strategy,
+            self.agent_types, edges, edge_weight_strategy,
             agent_type_prior, num_weight_samples)
 
         # Now let's add them to the networkx graph
-        for i, agent_type in enumerate(agent_types):
+        for i, agent_type in enumerate(self.agent_types):
             self.add_node(i, agent_type=agent_type)
         for i, neighbors in enumerate(edge_weights):
             for j, weight in enumerate(neighbors):
