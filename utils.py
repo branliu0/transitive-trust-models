@@ -1,3 +1,4 @@
+import math
 import numpy as np
 from scipy import stats
 
@@ -7,11 +8,11 @@ def clamp(val, minval, maxval):
     return min(max(val, minval), maxval)
 
 
-def softmax_rv(masses, values=None, z=0.5):
+def softmax_rv(masses, values=None, z=0.1):
     """ Returns a discrete random variable based on the softmax function. """
     nums = np.exp(np.array(masses) / z)
     dist = nums / np.sum(nums)
-    if not values:
+    if values is None:
         values = np.arange(len(masses))
     return stats.rv_discrete(name='softmax', values=(values, dist))
 
@@ -29,8 +30,11 @@ def noisy_theta(prior_type, theta_i, theta_j):
         val = stats.uniform.rvs(loc=lower_bound, scale=(1 - theta_i))
         return clamp(val, 0, 1)
     elif prior_type == 'normal':
-        val = stats.norm.rvs()
+        val = stats.norm.rvs(loc=theta_j, scale=math.sqrt(0.5) * (1 - theta_i))
+        return clamp(val, 0, 1)
     elif prior_type == 'beta':
+        val = stats.beta.rvs(2, 2, loc=lower_bound, scale=(1 - theta_i))
+        return clamp(val, 0, 1)
     raise ValueError("Invalid prior type")
 
 

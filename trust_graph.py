@@ -1,19 +1,50 @@
+import networkx as nx
 import numpy as np
 from scipy import stats
 import utils
 
-class TrustGraph(object):
-    def __init__(self, agent_types, edge_weights):
-        """ Initialize a TrustGraph object
-
-        Args:
-            agent_types - An array of floats in [0, 1] representing the agent
-                types.
-            edge_weights - An array of arrays specifying edge weights and edge
-                connections. Use None to indicate absence of an edge.
+class TrustGraph(nx.DiGraph):
+    def __init__(self, num_nodes, agent_type_prior, edge_strategy,
+                     edges_per_node, edge_weight_strategy, num_weight_samples):
         """
-        self.agent_types = agent_types
-        self.edge_weights = edge_weights
+        Args:
+            num_nodes - Number of nodes in this graph.
+            agent_type_prior -
+                'uniform': Selected from Unif[0, 1]
+                'normal': Selected from Normal[0.5, 1] truncated to [0, 1]
+                'beta': Selected from Beta[2, 2]
+            edge_strategy -
+                'uniform': Neighbors are uniformly selected
+                'cluster': High types are more likely to connect to high types
+            edges_per_node - The number of outgoing edges each node has.
+            edge_weight_strategy -
+                'sample': Sample from true agent type
+                'noisy': Low types more likely to sample from Bernoulli[0.5]
+                'prior': Low types more likely to sampel from prior distribution
+            num_weight_samples - Number of times to sample for determining
+                edge weights.
+        Returns:
+            A fully initialized TrustGraph object, generated using the
+            parameters specified.
+        """
+        super(TrustGraph, self).__init__()
+
+        # First generate our agent types, edges, and edge weights
+        agent_types = TrustGraph.initialize_agent_types(
+            num_nodes, agent_type_prior)
+        edges = TrustGraph.initialize_edges(
+            agent_types, edge_strategy, edges_per_node)
+        edge_weights = TrustGraph.initialize_edge_weights(
+            agent_types, edges, edge_weight_strategy,
+            agent_type_prior, num_weight_samples)
+
+        # Now let's add them to the networkx graph
+        for i, agent_type in enumerate(agent_types):
+            self.add_node(i, agent_type=agent_type)
+        for i, neighbors in enumerate(edge_weights):
+            for j, weight in enumerate(neighbors):
+                if weight:
+                    self.add_edge(i, j, weight=weight, inv_weight=1.0/weight)
 
     @staticmethod
     def initialize_agent_types(num_nodes, agent_type_prior):
@@ -30,13 +61,14 @@ class TrustGraph(object):
             return stats.uniform.rvs(size=num_nodes)
         elif agent_type_prior == 'normal':
             return stats.truncnorm.rvs(
-                a=-0.5, b=0.5, loc=0.5, size=num_nodes)
+                -1, 1, loc=0.5, scale=0.5, size=num_nodes)
         elif agent_type_prior == 'beta':
             return stats.beta.rvs(2, 2, size=num_nodes)
         raise ValueError("Invalid agent type prior")
 
     @staticmethod
     def initialize_edges(agent_types, edge_strategy, edges_per_node):
+        # TODO: 'cluster' strategy can be greatly optimized.
         """
         Args:
             agent_types - Array of floats in [0, 1] representing agent types.
@@ -54,14 +86,14 @@ class TrustGraph(object):
             # Uniformly pick a subset from all possible nodes.
             for i in xrange(len(agent_types)):
                 edges.append(np.random.choice(
-                    list(xrange(agent_types)), edges_per_node))
+                    np.delete(np.arange(n), i), edges_per_node))
             return edges
         elif edge_strategy == 'cluster':
             # High types are more likely to be connected to other high types
             for i, agent_type in enumerate(agent_types):
                 neighbors = []
                 for j in xrange(edges_per_node):
-                    if np.random.random(agent_type):
+                    if utils.random_true(agent_type):
                         # with prob theta_i, be more likely to select a high-type agent
                         softmax = utils.softmax_rv(
                             np.delete(agent_types, neighbors + [i]),
@@ -127,36 +159,3 @@ class TrustGraph(object):
                     weights[i][j] = float(sum) / num_samples
             return weights
         raise ValueError("Invalid edge weight strategy")
-
-
-    @staticmethod
-    def create_graph(num_nodes, agent_type_prior, edge_strategy,
-                     edges_per_node, edge_weight_strategy, num_weight_samples):
-        """
-        Args:
-            num_nodes - Number of nodes in this graph.
-            agent_type_prior -
-                'uniform': Selected from Unif[0, 1]
-                'normal': Selected from Normal[0.5, 1] truncated to [0, 1]
-                'beta': Selected from Beta[2, 2]
-            edge_strategy -
-                'uniform': Neighbors are uniformly selected
-                'cluster': High types are more likely to connect to high types
-            edges_per_node - The number of outgoing edges each node has.
-            edge_weight_strategy -
-                'sample': Sample from true agent type
-                'noisy': Low types more likely to sample from Bernoulli[0.5]
-                'prior': Low types more likely to sampel from prior distribution
-            num_weight_samples - Number of times to sample for determining
-                edge weights.
-        Returns:
-            A fully initialized TrustGraph object, generated using the
-            parameters specified.
-        """
-        agent_types = TrustGraph.initialize_agent_types(
-            num_nodes, agent_type_prior)
-        edges = TrustGraph.initialize_edges(agent_types, edge_strategy)
-        edge_weights = TrustGraph.initialize_edge_weights(
-            agent_types, edges, edge_weight_strategy, num_weight_samples)
-
-        return TrustGraph(agent_types, edge_weights)
