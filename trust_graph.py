@@ -48,8 +48,6 @@ class TrustGraph(nx.DiGraph):
         # First generate our agent types, edges, and edge weights
         self.agent_types = TrustGraph.initialize_agent_types(
             num_nodes, agent_type_prior)
-        # We sort the agents just to make visual inspections more convenient
-        self.agent_types = sorted(self.agent_types)
         edges = TrustGraph.initialize_edges(
             self.agent_types, edge_strategy, edges_per_node)
         edge_weights = TrustGraph.initialize_edge_weights(
@@ -76,12 +74,12 @@ class TrustGraph(nx.DiGraph):
             the agent types.
         """
         if agent_type_prior == 'uniform':
-            return stats.uniform.rvs(size=num_nodes)
+            return sorted(stats.uniform.rvs(size=num_nodes))
         elif agent_type_prior == 'normal':
-            return stats.truncnorm.rvs(
-                -1, 1, loc=0.5, scale=0.5, size=num_nodes)
+            return sorted(stats.truncnorm.rvs(
+                -1, 1, loc=0.5, scale=0.5, size=num_nodes))
         elif agent_type_prior == 'beta':
-            return stats.beta.rvs(2, 2, size=num_nodes)
+            return sorted(stats.beta.rvs(2, 2, size=num_nodes))
         raise ValueError("Invalid agent type prior")
 
     @staticmethod

@@ -7,7 +7,7 @@ increase confidence in the correctness of the code.
 ### TrustGraph#initialize\_agent\_types
 
 ```python
-import matplotlib as plt
+import matplotlib.pyplot as plt
 from trust_graph import TrustGraph
 
 # Print out histograms that should look like the underlying distribution
@@ -19,11 +19,11 @@ plt.hist(TrustGraph.initialize_agent_types(10000, 'beta'), bins=20)
 ### TrustGraph#initialize\_edges
 
 ```python
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import numpy as np
 from trust_graph import TrustGraph
 
-at = sorted(TrustGraph.initialize_agent_types(50, 'normal'))
+at = TrustGraph.initialize_agent_types(50, 'normal')
 
 # Should print out a line graph that has a flat trendline
 edges = TrustGraph.initialize_edges(at, 'uniform', 20)
@@ -37,12 +37,12 @@ plt.plot(np.mean(edges, 1))
 ### TrustGraph#initialize\_edge\_weights
 
 ```python
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 from trust_graph import TrustGraph
 
-at = sorted(TrustGraph.initialize_agent_types(50, 'normal'))
+at = TrustGraph.initialize_agent_types(50, 'normal')
 edges = TrustGraph.initialize_edges(at, 'uniform', 20)
 weights = TrustGraph.initialize_edge_weights(at, edges, 'sample', 'normal', 10)
 
@@ -70,4 +70,13 @@ plt.plot(stats.stats.nanmean(weights.astype(float), 0)); plt.plot(at);
 
 ### utils.softmax\_rv
 
-TODO
+```python
+import matplotlib.pyplot as plt
+from trust_graph import TrustGraph
+import utils
+
+# Display the softmax probability distribution -- should be increasing
+at = TrustGraph.initialize_agent_types(50, 'normal')
+softmax = utils.softmax_rv(at)
+plt.hist(softmax.rvs(size=10000))
+```

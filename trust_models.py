@@ -1,6 +1,8 @@
 import heapq
 import networkx as nx
 from scipy import stats
+import random
+
 import utils
 
 class TrustModels(object):
@@ -77,32 +79,31 @@ class TrustModels(object):
             return set(x[0] for x in top_nodes)
         raise ValueError("Invalid pretrust set strategy")
 
-    def _hitting_time_for_pair(self, i, j, pretrust_set, weighted):
+    def _hitting_time_single(self, i, pretrust_set, weighted):
         RESTART_PROB = 0.15
         NUM_ITERS = 1000
 
-        num_hits = 0  # counter for number of times we hit target j
+        num_hits = 0  # counter for number of times we hit target i
 
         # Initialize discrete random variables for the random walk
-        # Note: This gets re-initialized for every pair, and could be optimized.
         neighbor_dists = []
         if weighted:
             for i in xrange(self.graph.num_nodes):
                 edges = self.graph.edges(i, data=True)
-                neighbor_dists[i] = stats.rv_discrete(
+                neighbor_dists.append(stats.rv_discrete(
                     values=([x[1] for x in edges],
-                             utils.normalize([x[2]['weight'] for x in edges])))
+                             utils.normalize([x[2]['weight'] for x in edges]))))
         else:
             for i in xrange(self.graph.num_nodes):
-                neighbor_dists[i] = utils.discrete_uniform(
-                    [x[1] for x in self.graph.edges(i)])
+                neighbor_dists.append(utils.discrete_uniform_rv(
+                    [x[1] for x in self.graph.edges(i)]))
 
         # Actually run the Monte-Carlo simulations
-        cur_node = i
         for _ in xrange(NUM_ITERS):
+            cur_node = random.sample(pretrust_set, 1)[0]
             while True:
                 # We hit the target!
-                if cur_node == j:
+                if cur_node == i:
                     num_hits += 1
                     break
 
@@ -134,14 +135,9 @@ class TrustModels(object):
         pretrust_set = self._hitting_time_pretrusted_set(pretrust_strategy)
         ht_scores = []
         for i in xrange(self.graph.num_nodes):
-            neighbor_scores = []
-            for j in xrange(self.graph.num_nodes):
-                if i == j:
-                    continue
-                neighbor_scores.append(
-                    self._hitting_time_for_pair(i, j, pretrust_set,
-                                                weighted=weighted))
-            ht_scores.append(neighbor_scores)
+            ht_scores.append(self._hitting_time_single(
+                i, pretrust_set, weighted=weighted))
+            print "HT done for %d" % i
         return ht_scores
 
     def max_flow(self):
