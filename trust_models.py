@@ -1,7 +1,9 @@
 import heapq
+import sys
+import random
+
 import networkx as nx
 from scipy import stats
-import random
 
 import utils
 
@@ -81,22 +83,18 @@ class TrustModels(object):
 
     def _hitting_time_single(self, i, pretrust_set, weighted):
         RESTART_PROB = 0.15
-        NUM_ITERS = 1000
+        NUM_ITERS = 200
 
         num_hits = 0  # counter for number of times we hit target i
 
-        # Initialize discrete random variables for the random walk
-        neighbor_dists = []
+        # Initialize discrete random variables for the weighted random walk
         if weighted:
+            weighted_dists = []
             for i in xrange(self.graph.num_nodes):
                 edges = self.graph.edges(i, data=True)
-                neighbor_dists.append(stats.rv_discrete(
+                weighted_dists.append(stats.rv_discrete(
                     values=([x[1] for x in edges],
                              utils.normalize([x[2]['weight'] for x in edges]))))
-        else:
-            for i in xrange(self.graph.num_nodes):
-                neighbor_dists.append(utils.discrete_uniform_rv(
-                    [x[1] for x in self.graph.edges(i)]))
 
         # Actually run the Monte-Carlo simulations
         for _ in xrange(NUM_ITERS):
@@ -110,7 +108,10 @@ class TrustModels(object):
                 if utils.random_true(RESTART_PROB):
                     break  # We jumped; start next iteration
                 else:
-                    cur_node = neighbor_dists[cur_node].rvs()
+                    if weighted:
+                        cur_node = weighted_dists[cur_node].rvs()
+                    else:
+                        cur_node = random.choice(self.graph.edges(i))
 
         return float(num_hits) / NUM_ITERS
 
@@ -137,7 +138,7 @@ class TrustModels(object):
         for i in xrange(self.graph.num_nodes):
             ht_scores.append(self._hitting_time_single(
                 i, pretrust_set, weighted=weighted))
-            print "HT done for %d" % i
+            sys.stdout.write('.')
         return ht_scores
 
     def max_flow(self):
