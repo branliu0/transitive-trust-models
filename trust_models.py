@@ -81,37 +81,47 @@ class TrustModels(object):
             return set(x[0] for x in top_nodes)
         raise ValueError("Invalid pretrust set strategy")
 
-    def _hitting_time_single(self, i, pretrust_set, weighted):
+    def _hitting_time_single(self, target_node, pretrust_set, weighted):
         RESTART_PROB = 0.15
         NUM_ITERS = 200
 
         num_hits = 0  # counter for number of times we hit target i
 
-        # Initialize discrete random variables for the weighted random walk
-        if weighted:
-            weighted_dists = []
-            for i in xrange(self.graph.num_nodes):
-                edges = self.graph.edges(i, data=True)
-                weighted_dists.append(stats.rv_discrete(
+        # Pregenerate a larger number of walks at once to try to save time.
+        def generate_walks(node, size=NUM_ITERS/10):
+            if weighted:
+                edges = self.graph.edges(node, data=True)
+                rv = stats.rv_discrete(
                     values=([x[1] for x in edges],
-                             utils.normalize([x[2]['weight'] for x in edges]))))
+                             utils.normalize([x[2]['weight'] for x in edges])))
+                return list(rv.rvs(size=size))
+            else:
+                edges = self.graph.edges(node)
+                return [random.choice(edges) for _ in xrange(size)]
+
+        walks = [[] for i in xrange(self.graph.num_nodes)]
 
         # Actually run the Monte-Carlo simulations
+        num_steps = 0
         for _ in xrange(NUM_ITERS):
             cur_node = random.sample(pretrust_set, 1)[0]
             while True:
                 # We hit the target!
-                if cur_node == i:
+                if cur_node == target_node:
                     num_hits += 1
                     break
 
                 if utils.random_true(RESTART_PROB):
                     break  # We jumped; start next iteration
                 else:
-                    if weighted:
-                        cur_node = weighted_dists[cur_node].rvs()
-                    else:
-                        cur_node = random.choice(self.graph.edges(i))
+                    num_steps += 1
+                    try:
+                        cur_node = walks[cur_node].pop()
+                    except IndexError:
+                        walks[cur_node] = generate_walks(cur_node)
+                        cur_node = walks[cur_node].pop()
+
+        # print "%d steps taken" % num_steps
 
         return float(num_hits) / NUM_ITERS
 
