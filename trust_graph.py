@@ -59,7 +59,7 @@ class TrustGraph(nx.DiGraph):
             self.add_node(i, agent_type=agent_type)
         for i, neighbors in enumerate(edge_weights):
             for j, weight in enumerate(neighbors):
-                if weight:
+                if weight is not None:
                     self.add_edge(i, j, weight=weight, inv_weight=1.0/weight)
 
     @staticmethod
