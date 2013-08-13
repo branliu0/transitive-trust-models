@@ -13,7 +13,7 @@ class TrustModels(object):
     This class deals with with 4 transitive trust models:
         1. PageRank
         2. Hitting Time
-        3. MaxFlow
+        3. Maximum Flow
         4. Shortest Path
     Please refer to the individual functions for more details on the trust
     models.
@@ -28,28 +28,20 @@ class TrustModels(object):
         """
         self.graph = graph
 
-    def pagerank(self):
-        """ Unweighted pagerank algorithm with beta = 0.85.
+    def pagerank(self, weighted):
+        """ Pagerank algorithm with beta = 0.85.
 
-        Every outgoing edge is considered uniformly -- the weight is not
-        considered.
-
-        Returns:
-            An array where the ith element corresponds to the pagerank score
-            of agent i in the trust graph.
-        """
-        return nx.pagerank_numpy(self.graph, weight=None).values()
-
-    def pagerank_weighted(self):
-        """ Weighted PageRank algorithm with beta = 0.85.
-
-        Outgoing edges are weighted by their given weights.
+        If unweighted, then every outgoing edge is considered uniformly.
+        Otherwise, outgonig edges are weighted by their given weights.
 
         Returns:
             An array where the ith element corresponds to the pagerank score
             of agent i in the trust graph.
         """
-        return nx.pagerank_numpy(self.graph).values()
+        if weighted:
+            return nx.pagerank_numpy(self.graph).values()
+        else:
+            return nx.pagerank_numpy(self.graph, weight=None).values()
 
     def _hitting_time_pretrusted_set(self, pretrust_strategy):
         """ Pre-trusted set of nodes for Hitting Time, given a strategy.
