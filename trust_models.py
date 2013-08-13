@@ -82,13 +82,16 @@ class TrustModels(object):
         raise ValueError("Invalid pretrust set strategy")
 
     def _hitting_time_single(self, target_node, pretrust_set, weighted):
+        """ Returns the hitting time for a single node. """
         RESTART_PROB = 0.15
-        NUM_ITERS = 200
 
-        num_hits = 0  # counter for number of times we hit target i
+        # TODO: Can tune these numbers to get to a reasonable epsilon
+        MIN_ITERS = 200
+        MAX_ITERS = 500
+        MIN_HITS = 2
 
         # Pregenerate a larger number of walks at once to try to save time.
-        def generate_walks(node, size=NUM_ITERS/10):
+        def generate_walks(node, size=MIN_ITERS/10):
             if weighted:
                 edges = self.graph.edges(node, data=True)
                 rv = stats.rv_discrete(
@@ -100,11 +103,16 @@ class TrustModels(object):
                 return [random.choice(edges) for _ in xrange(size)]
 
         walks = [[] for i in xrange(self.graph.num_nodes)]
+        num_hits = 0
+        num_steps = 0
+        num_iters = 0
 
         # Actually run the Monte-Carlo simulations
-        num_steps = 0
-        for _ in xrange(NUM_ITERS):
+
+        while (num_iters < MIN_ITERS or
+               (num_hits < MIN_HITS and num_iters < MAX_ITERS)):
             cur_node = random.sample(pretrust_set, 1)[0]
+            num_iters += 1
             while True:
                 # We hit the target!
                 if cur_node == target_node:
@@ -122,8 +130,10 @@ class TrustModels(object):
                         cur_node = walks[cur_node].pop()
 
         # print "%d steps taken" % num_steps
+        # print "%d hits" % num_hits
+        sys.stdout.write(".")  # Just to give an indicator of progress
 
-        return float(num_hits) / NUM_ITERS
+        return float(num_hits) / num_iters
 
 
     def hitting_time(self, pretrust_strategy, weighted):
@@ -144,12 +154,8 @@ class TrustModels(object):
             of agent i.
         """
         pretrust_set = self._hitting_time_pretrusted_set(pretrust_strategy)
-        ht_scores = []
-        for i in xrange(self.graph.num_nodes):
-            ht_scores.append(self._hitting_time_single(
-                i, pretrust_set, weighted=weighted))
-            sys.stdout.write('.')
-        return ht_scores
+        return [self._hitting_time_single(i, pretrust_set, weighted)
+                for i in xrange(self.graph.num_nodes)]
 
     def max_flow(self):
         """ All-pairs maximum flow.
