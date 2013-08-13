@@ -38,6 +38,8 @@ class TrustGraph(nx.DiGraph):
         """
         super(TrustGraph, self).__init__()
 
+        MAX_INV_WEIGHT = 100000  # Maximum value for 'inv_weight'
+
         self.num_nodes            = num_nodes
         self.agent_type_prior     = agent_type_prior
         self.edge_strategy        = edge_strategy
@@ -60,7 +62,9 @@ class TrustGraph(nx.DiGraph):
         for i, neighbors in enumerate(edge_weights):
             for j, weight in enumerate(neighbors):
                 if weight is not None:
-                    self.add_edge(i, j, weight=weight, inv_weight=1.0/weight)
+                    inv_weight = (MAX_INV_WEIGHT if weight == 0.0
+                                  else min(1.0 / weight, MAX_INV_WEIGHT))
+                    self.add_edge(i, j, weight=weight, inv_weight=inv_weight)
 
     @staticmethod
     def initialize_agent_types(num_nodes, agent_type_prior):

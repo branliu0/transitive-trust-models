@@ -184,18 +184,26 @@ class TrustModels(object):
 
         For each pair, calculates the sum of the weights on the shortest path
         (by weight) between each pair in the graph. Uses the inverse weights
-        to calculate.
+        to calculate, and inverts the final weight, such that a higher score is
+        considered better.
 
         Returns:
-            An array of n arrays of length n -1, representing the weight of the
+            An array of n arrays of length n, representing the weight of the
             shortest path between each pair of nodes on the graph of inverse
-            weights.
+            weights. None is used for pairs where there is no path.
         """
         nx_dict = nx.all_pairs_dijkstra_path_length(
             self.graph, weight='inv_weight')
         # Convert from dict format to array format
-        shortest_paths = [x.values() for x in nx_dict.values()]
-        # Need to delete the diagonal values
-        for i in xrange(self.graph.num_nodes):
-            del shortest_paths[i][i]
+        shortest_paths = []
+        for i, d in nx_dict.iteritems():
+            neighbors = []
+            for j in xrange(self.graph.num_nodes):
+                try:
+                    neighbors.append(1.0 / d[j])
+                except KeyError:
+                    neighbors.append(None)
+                except ZeroDivisionError:
+                    neighbors.append(0)
+            shortest_paths.append(neighbors)
         return shortest_paths
