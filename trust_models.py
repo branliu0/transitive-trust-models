@@ -164,18 +164,19 @@ class TrustModels(object):
         guarantee a running time of O(VE^2).
 
         Returns:
-            An array of n arrays of length n - 1, representing the maximum flow
-            that can be pushed to each of the n - 1 neighbors for each of the n
-            nodes.
+            An array of n arrays of length n, representing the maximum flow
+            that can be pushed to each of the n nodes. None is used for pairs
+            where 0 flow can be pushed.
         """
         max_flow_scores = []
         for i in xrange(self.graph.num_nodes):
             neighbor_scores = []
             for j in xrange(self.graph.num_nodes):
                 if i == j:
-                    continue
-                neighbor_scores.append(
-                    nx.max_flow(self.graph, i, j, capacity='weight'))
+                    neighbor_scores.append(None)
+                else:
+                    mf = nx.max_flow(self.graph, i, j, capacity='weight')
+                    neighbor_scores.append(None if mf == 0 else mf)
             max_flow_scores.append(neighbor_scores)
         return max_flow_scores
 
@@ -201,9 +202,7 @@ class TrustModels(object):
             for j in xrange(self.graph.num_nodes):
                 try:
                     neighbors.append(1.0 / d[j])
-                except KeyError:
+                except (KeyError, ZeroDivisionError):
                     neighbors.append(None)
-                except ZeroDivisionError:
-                    neighbors.append(0)
             shortest_paths.append(neighbors)
         return shortest_paths
