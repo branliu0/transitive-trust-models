@@ -1,6 +1,7 @@
 from collections import defaultdict
 import os
 import time
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -110,19 +111,32 @@ class EdgeCountExperimentSet(object):
             f.write(yaml.dump(exp, indent=2))
 
     def load_experiments(self):
-        if sum(len(x) for x in self.experiments) != 0:
+        # TODO: Loading experiments is very slow. Consider paring down what gets
+        # marshalled and saved?
+        if (hasattr(self, "experiments") and
+            isinstance(self.experiments, dict) and
+            sum(len(x) for x in self.experiments.values()) != 0):
             raise ValueError("Error: self.experiments is populated. "
                              "Clear before loading.")
 
         exp_folder = os.path.join(SAVE_FOLDER,
                                   "%s_edge_count" % self.prefix)
-        if not os.path.exists(exp_folder):
-            return
+        self.experiments = defaultdict(list)
+        num_experiments = 0
+        if os.path.exists(exp_folder):
+            while True:
+                filename = os.path.join(
+                    exp_folder, "experiment.%03d.yaml" % (num_experiments + 1))
+                if not os.path.exists(filename):
+                    break
 
-        for filename in os.listdir(exp_folder):
-            with open(os.path.join(exp_folder, filename), 'r') as f:
-                exp = yaml.load(f.read())
-            self.experiments[exp.graph.edges_per_node].append(exp)
+                with open(filename) as f:
+                    exp = yaml.load(f.read())
+                self.experiments[exp.graph.edges_per_node].append(exp)
+                num_experiments += 1
+                sys.stdout.write('.')
+
+        print "%d experiments loaded" % num_experiments
 
     def _save(self, obj, suffix=""):
         with open(self._filename(suffix), 'w') as f:
