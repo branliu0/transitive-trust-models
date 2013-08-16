@@ -2,6 +2,7 @@ from collections import defaultdict
 import os
 import time
 
+import matplotlib.pyplot as plt
 import numpy as np
 import yaml
 
@@ -27,10 +28,11 @@ class EdgeCountExperimentSet(object):
         self.edge_counts          = (edge_counts if edge_counts
                                      else self.DEFAULT_EDGE_COUNTS)
 
-        # Save attributes now, in case we want to recreate later.
-        exp_filename = "%s_edge_count.yaml" % self.prefix
-        with open(os.path.join(SAVE_FOLDER, exp_filename), 'w') as f:
-            f.write(yaml.dump(self, indent=2))
+        if os.path.exists(self._filename()):
+            raise ValueError("Experiment Set with this prefix already exists")
+
+        # Save attributes now, for when we want to recreate later.
+        self._save(self)
 
         self.experiments = defaultdict(list)
         self.results = defaultdict(list)
@@ -40,7 +42,7 @@ class EdgeCountExperimentSet(object):
             self.experiments = defaultdict(list)
             self.results = defaultdict(list)
 
-        experiment_count = sum(len(x) for x in self.experiments)
+        experiment_count = sum(len(x) for x in self.experiments.values())
 
         for edge_count in self.edge_counts:
             for _ in xrange(self.num_experiments - len(self.experiments[edge_count])):
@@ -57,7 +59,7 @@ class EdgeCountExperimentSet(object):
                 print "Experiment %d added in %0.2f seconds" % \
                         (experiment_count, elapsed_time)
 
-                self.save_experiments()  # Always save progress!
+                self.save_experiment(exp, experiment_count)
 
     def gather_results(self):
         """
@@ -89,39 +91,86 @@ class EdgeCountExperimentSet(object):
                         for exp in self.experiments[edge_count]])
                     self.results[corrname][modelname][edge_count] = avg_score
 
-    def save_experiments(self):
-        self._save(self.experiments, "experiments")
+        self._save(self.results, "results")
+
+    def save_experiment(self, exp, num):
+        exp_folder = os.path.join(SAVE_FOLDER,
+                                  "%s_edge_count" % self.prefix)
+        if not os.path.exists(exp_folder):
+            os.mkdir(exp_folder, 0755)
+
+        exp_filename = os.path.join(exp_folder, "experiment.%03d.yaml" % num)
+        if os.path.exists(exp_filename):
+            print "Warning: would have overwritten file; backing up."
+            new_filename = os.path.join(
+                exp_folder, "experiment.%03d.%d.backup.yaml" % (num, time.time()))
+            os.rename(exp_filename, new_filename)
+
+        with open(exp_filename, 'w') as f:
+            f.write(yaml.dump(exp, indent=2))
+
+    def load_experiments(self):
+        if sum(len(x) for x in self.experiments) != 0:
+            raise ValueError("Error: self.experiments is populated. "
+                             "Clear before loading.")
+
+        exp_folder = os.path.join(SAVE_FOLDER,
+                                  "%s_edge_count" % self.prefix)
+        if not os.path.exists(exp_folder):
+            return
+
+        for filename in os.listdir(exp_folder):
+            with open(os.path.join(exp_folder, filename), 'r') as f:
+                exp = yaml.load(f.read())
+            self.experiments[exp.graph.edges_per_node].append(exp)
 
     def _save(self, obj, suffix=""):
-        filename = "%s_edge_count%s.yaml" % (
-            self.prefix, "_" + suffix if suffix else "")
-        with open(os.path.join(SAVE_FOLDER, filename), 'w') as f:
+        with open(self._filename(suffix), 'w') as f:
             f.write(yaml.dump(obj, indent=2))
 
+    def _filename(self, suffix=""):
+        filename = "%s_edge_count%s.yaml" % (
+            self.prefix, "_" + suffix if suffix else "")
+        return os.path.join(SAVE_FOLDER, filename)
+
     @staticmethod
-    def load_from_file(prefix):
+    def load_from_file(prefix, load_experiments=False):
         """ Deserialize a copy of an object from saved YAML files. """
         base_filename = os.path.join(SAVE_FOLDER, "%s_edge_count.yaml" % prefix)
-        exp_filename = os.path.join(SAVE_FOLDER,
-                                    "%s_edge_count_experiments.yaml" % prefix)
-        results_filename = os.path.join(SAVE_FOLDER,
-                                        "%s_edge_count_results.yaml" % prefix)
 
         if not os.path.exists(base_filename):
             raise ValueError("Save file does not exist.")
 
         with open(base_filename, 'r') as f:
-            exp = yaml.load(f.read())
+            exp_set = yaml.load(f.read())
 
-        if os.path.exists(exp_filename):
-            with open(exp_filename, 'r') as f:
-                exp.experiments = yaml.load(f.read())
+        if load_experiments:
+            exp_set.load_experiments()
 
+        results_filename = exp_set._filename("results")
         if os.path.exists(results_filename):
             with open(results_filename, 'r') as f:
-                exp.results = yaml.load(f.read())
+                exp_set.results = yaml.load(f.read())
 
-        return exp
+        return exp_set
+
+    def plot(self):
+        PLOT_MARKERS = ['b--^', 'g--*', 'g--s', 'g--^',
+                        'r--s', 'r--^', 'c--s', 'c--^']
+        for corrname in Experiment.CORRELATION_NAMES:
+            for i, modelname in enumerate(Experiment.MODEL_NAMES):
+                points = sorted(self.results[corrname][modelname].items())
+                plt.plot([x[0] for x in points], [x[1] for x in points],
+                         PLOT_MARKERS[i], label=modelname)
+            plt.suptitle('Varying edge count with graph of %d nodes' % self.num_nodes)
+            plt.xlabel('Edges per node')
+            plt.ylabel(corrname + ' correlation')
+            plt.legend(loc='center left', bbox_to_anchor=(1, 0.5),
+                       fancybox=True, shadow=True)
+            plt.show()
+
+    def description(self):
+        raise NotImplementedError
 
 
 class SampleCountExperimentSet(object):

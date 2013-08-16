@@ -123,7 +123,7 @@ class TrustModels(object):
 
         # print "%d steps taken" % num_steps
         # print "%d hits" % num_hits
-        sys.stdout.write(".")  # Just to give an indicator of progress
+        sys.stdout.write('.')  # Just to give an indicator of progress
 
         return float(num_hits) / num_iters
 
@@ -146,8 +146,10 @@ class TrustModels(object):
             of agent i.
         """
         pretrust_set = self._hitting_time_pretrusted_set(pretrust_strategy)
-        return [self._hitting_time_single(i, pretrust_set, weighted)
+        hitting_times = [self._hitting_time_single(i, pretrust_set, weighted)
                 for i in xrange(self.graph.num_nodes)]
+        sys.stdout.write("\n")
+        return hitting_times
 
     def max_flow(self):
         """ All-pairs maximum flow.
@@ -170,6 +172,8 @@ class TrustModels(object):
                     mf = nx.max_flow(self.graph, i, j, capacity='weight')
                     neighbor_scores.append(None if mf == 0 else mf)
             max_flow_scores.append(neighbor_scores)
+            sys.stdout.write('.')
+        sys.stdout.write("\n")
         return max_flow_scores
 
     def shortest_path(self):
