@@ -84,15 +84,15 @@ class TrustModels(object):
 
         # Pregenerate a larger number of walks at once to try to save time.
         def generate_walks(node, size=MIN_ITERS/10):
+            edges = self.graph.edges(node, data=True)
             if weighted:
-                edges = self.graph.edges(node, data=True)
                 rv = stats.rv_discrete(
                     values=([x[1] for x in edges],
                              utils.normalize([x[2]['weight'] for x in edges])))
                 return list(rv.rvs(size=size))
             else:
-                edges = self.graph.edges(node)
-                return [random.choice(edges) for _ in xrange(size)]
+                neighbors = [x[1] for x in edges]
+                return [random.choice(neighbors) for _ in xrange(size)]
 
         walks = [[] for i in xrange(self.graph.num_nodes)]
         num_hits = 0
