@@ -27,6 +27,7 @@ class TrustModels(object):
                 both a 'weight' attribute and 'inv_weight' attribute.
         """
         self.graph = graph
+        self.num_nodes = len(self.graph.nodes())
 
     def pagerank(self, weighted):
         """ Pagerank algorithm with beta = 0.85.
@@ -94,7 +95,7 @@ class TrustModels(object):
                 neighbors = [x[1] for x in edges]
                 return [random.choice(neighbors) for _ in xrange(size)]
 
-        walks = [[] for i in xrange(self.graph.num_nodes)]
+        walks = [[] for i in xrange(self.num_nodes)]
         num_hits = 0
         num_steps = 0
         num_iters = 0
@@ -147,7 +148,7 @@ class TrustModels(object):
         """
         pretrust_set = self._hitting_time_pretrusted_set(pretrust_strategy)
         hitting_times = [self._hitting_time_single(i, pretrust_set, weighted)
-                for i in xrange(self.graph.num_nodes)]
+                for i in xrange(self.num_nodes)]
         sys.stdout.write("\n")
         return hitting_times
 
@@ -163,9 +164,9 @@ class TrustModels(object):
             where 0 flow can be pushed.
         """
         max_flow_scores = []
-        for i in xrange(self.graph.num_nodes):
+        for i in xrange(self.num_nodes):
             neighbor_scores = []
-            for j in xrange(self.graph.num_nodes):
+            for j in xrange(self.num_nodes):
                 if i == j:
                     neighbor_scores.append(None)
                 else:
@@ -195,7 +196,7 @@ class TrustModels(object):
         shortest_paths = []
         for i, d in nx_dict.iteritems():
             neighbors = []
-            for j in xrange(self.graph.num_nodes):
+            for j in xrange(self.num_nodes):
                 try:
                     neighbors.append(1.0 / d[j])
                 except (KeyError, ZeroDivisionError):
