@@ -169,7 +169,8 @@ class EdgeCountExperimentSet(object):
         return exp_set
 
     def plot(self):
-        PLOT_MARKERS = ['b--^', 'g--*', 'g--s', 'g--^',
+        # Note: These correlate with MODEL_NAMES
+        PLOT_MARKERS = ['b--^', 'g--*', 'g--^', 'm--*', 'm--^',
                         'r--s', 'r--^', 'c--s', 'c--^']
         for corrname in Experiment.CORRELATION_NAMES:
             for i, modelname in enumerate(Experiment.MODEL_NAMES):

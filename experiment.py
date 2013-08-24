@@ -48,7 +48,6 @@ class Experiment(object):
         'pearson': {
             'pagerank_weighted': ...,
             'hitting_time_weighted_all': ...,
-            'hitting_time_weighted_prob': ...,
             'hitting_time_weighted_top': ...,
             'max_flow': ...,
             'max_flow_weighted_means': ...,
@@ -62,8 +61,9 @@ class Experiment(object):
 
     MODEL_NAMES = [
         'pagerank_weighted',
+        'hitting_pagerank_all',
+        'hitting_pagerank_top',
         'hitting_time_weighted_all',
-        'hitting_time_weighted_prob',
         'hitting_time_weighted_top',
         'max_flow',
         'max_flow_weighted_means',
@@ -105,10 +105,12 @@ class Experiment(object):
                 self.trust_models.pagerank(weighted=True)
         self.global_ttms['hitting_time_weighted_all']['scores'] = \
                 self.trust_models.hitting_time('all', weighted=True)
-        self.global_ttms['hitting_time_weighted_prob']['scores'] = \
-                self.trust_models.hitting_time('prob', weighted=True)
         self.global_ttms['hitting_time_weighted_top']['scores'] = \
                 self.trust_models.hitting_time('top', weighted=True)
+        self.global_ttms['hitting_pagerank_all']['scores'] = \
+                self.trust_models.hitting_pagerank('all')
+        self.global_ttms['hitting_pagerank_top']['scores'] = \
+                self.trust_models.hitting_pagerank('top')
 
         self.personalized_ttms['max_flow']['scores'] = \
                 self.trust_models.max_flow()

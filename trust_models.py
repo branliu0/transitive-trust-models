@@ -132,7 +132,7 @@ class TrustModels(object):
         return float(num_hits) / num_iters
 
     def _hitting_time_all(self, pretrust_set, weighted):
-        NUM_ITERS = 200000
+        NUM_ITERS = 100000
         RESTART_PROB = 0.15
 
         def generate_walks(node, size=100):
@@ -194,6 +194,48 @@ class TrustModels(object):
         """
         pretrust_set = self._hitting_time_pretrusted_set(pretrust_strategy)
         return self._hitting_time_all(pretrust_set, weighted)
+
+    def hitting_pagerank(self, pretrust_strategy):
+        BETA = 0.85
+
+        pretrust_set = self._hitting_time_pretrusted_set(pretrust_strategy)
+
+        scores = []
+        for i in xrange(self.num_nodes):
+            adj_matrix = nx.to_numpy_matrix(self.graph)
+
+            # Delete the out-nodes for node i
+            adj_matrix[i, :] = 0
+
+            # ?? Add constant to dangling nodes' row
+            # dangling = np.where(adj_matrix.sum(axis=1) == 0)
+            # for d in dangling[0]:
+                # adj_matrix[d] = 1.0 / self.num_nodes
+
+            # Normalize for non-zero rows
+            for j in xrange(self.num_nodes):
+                if adj_matrix[j].sum() != 0:
+                    adj_matrix[j] /= adj_matrix[j].sum()
+
+            # Add in restart_probability
+            restart = np.zeros(self.num_nodes)
+            restart[list(pretrust_set)] = 1
+            restart /= restart.sum()
+
+            # Add the restart distribution to the matrix
+            htpr_matrix = BETA * adj_matrix + \
+                    (1 - BETA) * np.outer(np.ones(self.num_nodes), restart)
+
+            # Take the dominant eigenvector, and pull out the score
+            eigenvalues, eigenvectors = np.linalg.eig(htpr_matrix.T)
+            dominant_index = eigenvalues.argsort()[-1]
+            pagerank = np.array(eigenvectors[:, dominant_index]).flatten().real
+
+            # Take out the normalized score
+            pagerank /= np.sum(pagerank)
+            scores.append(pagerank[i])
+
+        return scores
 
     def max_flow(self):
         """ All-pairs maximum flow.
