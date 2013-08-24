@@ -1,8 +1,9 @@
 import heapq
-import sys
 import random
+import sys
 
 import networkx as nx
+import numpy as np
 from scipy import stats
 
 import utils
@@ -79,8 +80,8 @@ class TrustModels(object):
         RESTART_PROB = 0.15
 
         # TODO: Can tune these numbers to get to a reasonable epsilon
-        MIN_ITERS = 200
-        MAX_ITERS = 500
+        MIN_ITERS = 3000
+        MAX_ITERS = 5000
         MIN_HITS = 2
 
         # Pregenerate a larger number of walks at once to try to save time.
@@ -130,6 +131,49 @@ class TrustModels(object):
 
         return float(num_hits) / num_iters
 
+    def _hitting_time_all(self, pretrust_set, weighted):
+        NUM_ITERS = 200000
+        RESTART_PROB = 0.15
+
+        def generate_walks(node, size=100):
+            edges = self.graph.edges(node, data=True)
+            if not edges:
+                return [node] * size
+            if weighted:
+                rv = stats.rv_discrete(
+                    values=([x[1] for x in edges],
+                             utils.normalize([x[2]['weight'] for x in edges])))
+                return list(rv.rvs(size=size))
+            else:
+                neighbors = [x[1] for x in edges]
+                return [random.choice(neighbors) for _ in xrange(size)]
+
+        def generate_coin_flips(size):
+            return list(stats.bernoulli.rvs(RESTART_PROB, size=size))
+
+        hits = np.zeros(self.num_nodes)
+        coin_flips = generate_coin_flips(8 * NUM_ITERS)
+        walks = [generate_walks(i) for i in xrange(self.num_nodes)]
+
+        for _ in xrange(NUM_ITERS):
+            cur_node = random.sample(pretrust_set, 1)[0]
+            current_hits = np.zeros(self.num_nodes)
+            while True:
+                current_hits[cur_node] = 1  # Mark as hit, but only once
+                if coin_flips.pop():  # Restart?
+                    break
+
+                if not coin_flips:
+                    coin_flips = generate_coin_flips(1000)
+
+                if not walks[cur_node]:
+                    walks[cur_node] = generate_walks(cur_node)
+
+                cur_node = walks[cur_node].pop()
+
+            hits += current_hits
+
+        return list(hits / NUM_ITERS)
 
     def hitting_time(self, pretrust_strategy, weighted):
         """ Hitting Time algorithm with beta = 0.85.
@@ -149,10 +193,7 @@ class TrustModels(object):
             of agent i.
         """
         pretrust_set = self._hitting_time_pretrusted_set(pretrust_strategy)
-        hitting_times = [self._hitting_time_single(i, pretrust_set, weighted)
-                for i in xrange(self.num_nodes)]
-        sys.stdout.write("\n")
-        return hitting_times
+        return self._hitting_time_all(pretrust_set, weighted)
 
     def max_flow(self):
         """ All-pairs maximum flow.
