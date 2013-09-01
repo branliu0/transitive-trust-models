@@ -52,7 +52,6 @@ class ExperimentSet(object):
         self._save(self)
 
         self.experiments = defaultdict(list)
-        self.results = defaultdict(list)
 
     ###################################
     # Functions related to computation
@@ -61,11 +60,9 @@ class ExperimentSet(object):
     def run_experiments(self, clear=False):
         if clear:
             self.experiments = defaultdict(list)
-            self.results = defaultdict(list)
 
         experiment_count = sum(len(x) for x in self.experiments.values())
         params = self.experiment_params.copy()
-
 
         for val in self.ind_param_values:
             for _ in xrange(self.num_experiments - len(self.experiments[val])):
@@ -81,9 +78,11 @@ class ExperimentSet(object):
                 print "Experiment %d added in %0.2f seconds" % \
                         (experiment_count, elapsed_time)
 
-                # Not saving for now because it take extra time and space and
+                # Not saving for now because it takes extra time and space and
                 # not entirely clear we will need to recover right now.
                 # self.save_experiment(exp, experiment_count)
+
+        self.gather_results()
 
     def gather_results(self):
         """
@@ -156,13 +155,15 @@ num_experiments      = {num_experiments}""".format(**self.__dict__)
     def load_from_file(cls, prefix, load_experiments=False):
         """ Retrive and load an experiment set from YAML files. """
         base_filename = os.path.join(
-            SAVE_FOLDER, "%s_%s.yaml" % prefix, cls.name)
+            SAVE_FOLDER, "%s_%s.yaml" % (prefix, cls.name))
 
         if not os.path.exists(base_filename):
             raise ValueError("Save file does not exist.")
 
         with open(base_filename, 'r') as f:
             exp_set = yaml.load(f.read())
+
+        exp_set.experiments = defaultdict(list)
 
         if load_experiments:
             exp_set.load_experiments()
@@ -198,7 +199,7 @@ num_experiments      = {num_experiments}""".format(**self.__dict__)
             raise ValueError("Error: self.experiments is populated. "
                              "Clear before loading to avoid overwriting.")
 
-        exp_folder = os.path.join(SAVE_FOLDER, "%s_%s" % self.prefix, self.name)
+        exp_folder = os.path.join(SAVE_FOLDER, "%s_%s" % (self.prefix, self.name))
         self.experiments = defaultdict(list)
         num_experiments = 0
         if os.path.exists(exp_folder):
@@ -267,7 +268,8 @@ class SampleCountExperimentSet(ExperimentSet):
     plot_xlabel = 'Number of samples per edge'
 
     # TODO: Need to figure out how to plot infinity
-    DEFAULT_SAMPLE_COUNTS = [1, 2, 3, 4, 5, 10, 20, 100, float('inf')]
+    # DEFAULT_SAMPLE_COUNTS = [1, 2, 3, 4, 5, 10, 20, 100, float('inf')]
+    DEFAULT_SAMPLE_COUNTS = [1, 2, 3, 4, 5, 10, 20, 100]
 
     def __init__(self, num_nodes, agent_type_prior, edge_strategy,
                  edges_per_node, edge_weight_strategy, prefix,

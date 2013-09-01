@@ -155,7 +155,10 @@ class TrustModels(object):
         coin_flips = generate_coin_flips(8 * NUM_ITERS)
         walks = [generate_walks(i) for i in xrange(self.num_nodes)]
 
-        for _ in xrange(NUM_ITERS):
+        for i in xrange(NUM_ITERS):
+            if i % (NUM_ITERS / 50) == 0:
+                sys.stdout.write('.')
+
             cur_node = random.sample(pretrust_set, 1)[0]
             current_hits = np.zeros(self.num_nodes)
             while True:
@@ -173,6 +176,7 @@ class TrustModels(object):
 
             hits += current_hits
 
+        print
         return list(hits / NUM_ITERS)
 
     def hitting_time(self, pretrust_strategy, weighted):
