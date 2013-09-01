@@ -185,7 +185,15 @@ class EdgeCountExperimentSet(object):
             plt.show()
 
     def description(self):
-        raise NotImplementedError
+        print """\
+num_nodes            = {num_nodes}
+agent_type_prior     = {agent_type_prior}
+edge_strategy        = {edge_strategy}
+edge_weight_strategy = {edge_weight_strategy}
+num_weight_samples   = {num_weight_samples}
+prefix               = {prefix}
+num_experiments      = {num_experiments}
+edge_counts          = {edge_counts}""".format(**self.__dict__)
 
 
 class SampleCountExperimentSet(object):
