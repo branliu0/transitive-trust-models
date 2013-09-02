@@ -10,7 +10,7 @@ import yaml
 
 from experiment import Experiment
 
-SAVE_FOLDER = os.path.join(os.path.dirname(__file__), "saved")
+SAVE_FOLDER = os.path.join(os.path.dirname(__file__), '..', 'saved')
 
 class ExperimentSet(object):
     """ Abstract base class used for forming experiment sets.
