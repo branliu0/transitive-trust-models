@@ -179,3 +179,8 @@ class TrustGraph(nx.DiGraph):
                     weights[i][j] = float(sum) / num_samples
             return weights
         raise ValueError("Invalid edge weight strategy")
+
+    @staticmethod
+    def g50():
+        """ Convenience method for quickly getting a graph of 50 nodes. """
+        return TrustGraph(50, 'beta', 'uniform', 15, 'prior', 30)
