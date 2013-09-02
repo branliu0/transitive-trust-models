@@ -102,11 +102,11 @@ class Experiment(object):
     def compute_scores(self):
         """ Actually run the trust model routines. Can take a while. """
         self.global_ttms['pagerank_weighted']['scores'] = \
-                self.trust_models.pagerank(weighted=True)
+                self.trust_models.pagerank()
         self.global_ttms['hitting_time_weighted_all']['scores'] = \
-                self.trust_models.hitting_time('all', weighted=True)
+                self.trust_models.hitting_time('all')
         self.global_ttms['hitting_time_weighted_top']['scores'] = \
-                self.trust_models.hitting_time('top', weighted=True)
+                self.trust_models.hitting_time('top')
         self.global_ttms['hitting_pagerank_all']['scores'] = \
                 self.trust_models.hitting_pagerank('all')
         self.global_ttms['hitting_pagerank_top']['scores'] = \

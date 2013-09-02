@@ -30,7 +30,7 @@ class TrustModels(object):
         self.graph = graph
         self.num_nodes = len(self.graph.nodes())
 
-    def pagerank(self, weighted):
+    def pagerank(self, weighted=True):
         """ Pagerank algorithm with beta = 0.85.
 
         If unweighted, then every outgoing edge is considered uniformly.
@@ -75,7 +75,7 @@ class TrustModels(object):
             return set(x[0] for x in top_nodes)
         raise ValueError("Invalid pretrust set strategy")
 
-    def _hitting_time_single(self, target_node, pretrust_set, weighted):
+    def _hitting_time_single(self, target_node, pretrust_set, weighted=True):
         """ Returns the hitting time for a single node. """
         RESTART_PROB = 0.15
 
@@ -131,7 +131,7 @@ class TrustModels(object):
 
         return float(num_hits) / num_iters
 
-    def _hitting_time_all(self, pretrust_set, weighted):
+    def _hitting_time_all(self, pretrust_set, weighted=True):
         NUM_ITERS = 100000
         RESTART_PROB = 0.15
 
@@ -179,7 +179,7 @@ class TrustModels(object):
         print
         return list(hits / NUM_ITERS)
 
-    def hitting_time(self, pretrust_strategy, weighted):
+    def hitting_time(self, pretrust_strategy, weighted=True):
         """ Hitting Time algorithm with beta = 0.85.
 
         The Hitting Time of a node is the probability that
