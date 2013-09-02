@@ -1,4 +1,5 @@
 from collections import defaultdict
+import time
 
 import numpy as np
 from scipy import stats
@@ -46,9 +47,9 @@ class Experiment(object):
     self.info_scores has the following format:
     {
         'pearson': {
-            'pagerank_weighted': ...,
-            'hitting_time_weighted_all': ...,
-            'hitting_time_weighted_top': ...,
+            'pagerank': ...,
+            'hitting_time_all': ...,
+            'hitting_time_top': ...,
             'max_flow': ...,
             'max_flow_weighted_means': ...,
             'shortest_path': ...,
@@ -57,14 +58,18 @@ class Experiment(object):
         'kendalltau': ...,
         'spearman': ...
     }
+
+    self.runtimes has the following format:
+    {
+        'pagerank_weighted': <float>
+        ...
+    }
     """
 
     MODEL_NAMES = [
-        'pagerank_weighted',
-        'hitting_pagerank_all',
-        'hitting_pagerank_top',
-        'hitting_time_weighted_all',
-        'hitting_time_weighted_top',
+        'pagerank',
+        'hitting_time_all',
+        'hitting_time_top',
         'max_flow',
         'max_flow_weighted_means',
         'shortest_path',
@@ -93,6 +98,7 @@ class Experiment(object):
             'kendalltau': stats.kendalltau,
             'spearman': stats.spearmanr
         }
+        self.runtimes = dict()
 
     def compute_informativeness(self):
         """ Compute trust model scores and measure informativeness. """
@@ -101,21 +107,30 @@ class Experiment(object):
 
     def compute_scores(self):
         """ Actually run the trust model routines. Can take a while. """
-        self.global_ttms['pagerank_weighted']['scores'] = \
-                self.trust_models.pagerank()
-        self.global_ttms['hitting_time_weighted_all']['scores'] = \
-                self.trust_models.hitting_time('all')
-        self.global_ttms['hitting_time_weighted_top']['scores'] = \
-                self.trust_models.hitting_time('top')
-        self.global_ttms['hitting_pagerank_all']['scores'] = \
-                self.trust_models.hitting_pagerank('all')
-        self.global_ttms['hitting_pagerank_top']['scores'] = \
-                self.trust_models.hitting_pagerank('top')
+        # Format:
+        # 1. True if a global TTM; False if a personalized TTM
+        # 2. The name for the TTM; used as the key in the dict
+        # 3. The name of the function on the TrustModel class
+        # 4. (list) args to be passed to the ttm function
+        # 5. (dict) kwargs to be passed to the ttm function
+        ttms_params = [
+            (True, 'pagerank', 'pagerank', [], {}),
+            (True, 'hitting_time_all', 'hitting_time', ['all'], {}),
+            (True, 'hitting_time_top', 'hitting_time', ['top'], {}),
+            (False, 'max_flow', 'max_flow', [], {}),
+            (False, 'shortest_path', 'shortest_path', [], {})
+        ]
 
-        self.personalized_ttms['max_flow']['scores'] = \
-                self.trust_models.max_flow()
-        self.personalized_ttms['shortest_path']['scores'] = \
-                self.trust_models.shortest_path()
+        for is_global, name, model_method, args, kwargs in ttms_params:
+            # First calculate the runtime of the method
+            start_time = time.clock()
+            score = getattr(self.trust_models, model_method)(*args, **kwargs)
+            runtime = time.clock() - start_time
+
+            # Then actually store it.
+            d = self.global_ttms if is_global else self.personalized_ttms
+            d[name]['scores'] = score
+            self.runtimes[name] = runtime
 
     def measure_informativeness(self):
         """ Use correlation functions to measure the informativeness of scores.

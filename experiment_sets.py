@@ -120,15 +120,27 @@ class ExperimentSet(object):
     # Functions related to display and visualization
     #################################################
 
+    PLOT_MARKERS = {
+        'pagerank': 'b--^',
+        'pagerank_weighted': 'b--^',  # Backwards compatibility
+        'hitting_pagerank_all': 'g--*',
+        'hitting_pagerank_top': 'g--^',
+        'hitting_time_all': 'm--*',
+        'hitting_time_weighted_all': 'm--*',  # Backwards compatibility
+        'hitting_time_top': 'm--^',
+        'hitting_time_weighted_top': 'm--^',  # Backwards compatibility
+        'max_flow': 'r--s',
+        'max_flow_weighted_means': 'r--^',
+        'shortest_path': 'c--s',
+        'shortest_path_weighted_means': 'c--^'
+    }
+
     def plot(self):
-        # Note: These correlate with MODEL_NAMES
-        PLOT_MARKERS = ['b--^', 'g--*', 'g--^', 'm--*', 'm--^',
-                        'r--s', 'r--^', 'c--s', 'c--^']
         for corrname in Experiment.CORRELATION_NAMES:
             for i, modelname in enumerate(Experiment.MODEL_NAMES):
                 points = sorted(self.results[corrname][modelname].items())
                 plt.plot([x[0] for x in points], [x[1] for x in points],
-                         PLOT_MARKERS[i], label=modelname)
+                         self.PLOT_MARKERS[modelname], label=modelname)
             plt.suptitle(self.plot_title)
             plt.xlabel(self.plot_xlabel)
             plt.ylabel(corrname + ' correlation')
