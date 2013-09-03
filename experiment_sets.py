@@ -78,9 +78,7 @@ class ExperimentSet(object):
                 print "Experiment %d added in %0.2f seconds" % \
                         (experiment_count, elapsed_time)
 
-                # Not saving for now because it takes extra time and space and
-                # not entirely clear we will need to recover right now.
-                # self.save_experiment(exp, experiment_count)
+                self.save_experiment(exp, experiment_count)
 
         self.aggregate_results()
         self.aggregate_runtimes()
