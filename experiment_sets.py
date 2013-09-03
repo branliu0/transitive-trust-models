@@ -82,10 +82,12 @@ class ExperimentSet(object):
                 # not entirely clear we will need to recover right now.
                 # self.save_experiment(exp, experiment_count)
 
-        self.gather_results()
+        self.aggregate_results()
+        self.aggregate_runtimes()
 
-    def gather_results(self):
-        """
+    def aggregate_results(self):
+        """ Aggregates results from all the experiments.
+
         Populates the self.results dict in the following format:
         {
             <correlation type>: {
@@ -116,6 +118,26 @@ class ExperimentSet(object):
 
         self._save(self.results, "results")
 
+    def aggregate_runtimes(self):
+        """ Aggregates te runtime results from all the experiments.
+
+        Populates the self.runtimes dict in the following format:
+        {
+            <transitive trust model>: {
+                <param_val>: <average runtime>,
+                ...
+            },
+            ...
+        }
+        """
+        self.runtimes = {}
+        for modelname in Experiment.MODEL_NAMES:
+            self.runtimes[modelname] = {}
+            for val in self.ind_param_values:
+                avg_runtime = np.mean([exp.runtimes[modelname]
+                                       for exp in self.experiments[val]])
+                self.runtimes[modelname][val] = avg_runtime
+
     #################################################
     # Functions related to display and visualization
     #################################################
@@ -137,7 +159,7 @@ class ExperimentSet(object):
 
     def plot(self):
         for corrname in Experiment.CORRELATION_NAMES:
-            for i, modelname in enumerate(Experiment.MODEL_NAMES):
+            for modelname in Experiment.MODEL_NAMES:
                 points = sorted(self.results[corrname][modelname].items())
                 plt.plot([x[0] for x in points], [x[1] for x in points],
                          self.PLOT_MARKERS[modelname], label=modelname)
@@ -147,6 +169,18 @@ class ExperimentSet(object):
             plt.legend(loc='center left', bbox_to_anchor=(1, 0.5),
                        fancybox=True, shadow=True)
             plt.show()
+
+    def plot_runtimes(self):
+        for modelname in Experiment.MODEL_NAMES:
+            points = sorted(self.runtimes[modelname].items())
+            plt.plot([x[0] for x in points], [x[1] for x in points],
+                     self.PLOT_MARKERS[modelname], label=modelname)
+        plt.suptitle("Runtimes for transitive trust models")
+        plt.xlabel(self.plot_xlabel)
+        plt.ylabel("Average Runtime (sec)")
+        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5),
+                   fancybox=True, shadow=True)
+        plt.show()
 
     def description(self):
         return """\
