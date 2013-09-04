@@ -66,15 +66,21 @@ class Experiment(object):
     }
     """
 
-    MODEL_NAMES = [
-        'pagerank',
-        'hitting_time_all',
-        'hitting_time_top',
-        'max_flow',
-        'max_flow_weighted_means',
-        'shortest_path',
-        'shortest_path_weighted_means'
+    # Format:
+    # 1. True if a global TTM; False if a personalized TTM
+    # 2. The name for the TTM; used as the key in the dict
+    # 3. The name of the function on the TrustModel class
+    # 4. (list) args to be passed to the ttm function
+    # 5. (dict) kwargs to be passed to the ttm function
+    TTM_PARAMS = [
+        (True, 'pagerank', 'pagerank', [], {}),
+        (True, 'hitting_time_all', 'hitting_time', ['all'], {}),
+        (True, 'hitting_time_top', 'hitting_time', ['top'], {}),
+        (False, 'max_flow', 'max_flow', [], {}),
+        (False, 'shortest_path', 'shortest_path', [], {})
     ]
+
+    MODEL_NAMES = [x[1] for x in TTM_PARAMS]
 
     CORRELATION_NAMES = ['pearson', 'kendalltau', 'spearman']
 
@@ -107,21 +113,8 @@ class Experiment(object):
 
     def compute_scores(self):
         """ Actually run the trust model routines. Can take a while. """
-        # Format:
-        # 1. True if a global TTM; False if a personalized TTM
-        # 2. The name for the TTM; used as the key in the dict
-        # 3. The name of the function on the TrustModel class
-        # 4. (list) args to be passed to the ttm function
-        # 5. (dict) kwargs to be passed to the ttm function
-        ttms_params = [
-            (True, 'pagerank', 'pagerank', [], {}),
-            (True, 'hitting_time_all', 'hitting_time', ['all'], {}),
-            (True, 'hitting_time_top', 'hitting_time', ['top'], {}),
-            (False, 'max_flow', 'max_flow', [], {}),
-            (False, 'shortest_path', 'shortest_path', [], {})
-        ]
 
-        for is_global, name, model_method, args, kwargs in ttms_params:
+        for is_global, name, model_method, args, kwargs in self.TTM_PARAMS:
             # First calculate the runtime of the method
             start_time = time.clock()
             score = getattr(self.trust_models, model_method)(*args, **kwargs)

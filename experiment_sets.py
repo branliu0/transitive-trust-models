@@ -157,7 +157,7 @@ class ExperimentSet(object):
 
     def plot(self):
         for corrname in Experiment.CORRELATION_NAMES:
-            for modelname in Experiment.MODEL_NAMES:
+            for modelname in self.results[corrname].keys():
                 points = sorted(self.results[corrname][modelname].items())
                 plt.plot([x[0] for x in points], [x[1] for x in points],
                          self.PLOT_MARKERS[modelname], label=modelname)
@@ -219,7 +219,7 @@ num_experiments      = {num_experiments}""".format(**self.__dict__)
 
     def save_experiment(self, exp, num):
         """ Saves an experiment to disk. """
-        exp_folder = os.path.join(SAVE_FOLDER, "%s_%s" % self.prefix, self.name)
+        exp_folder = os.path.join(SAVE_FOLDER, "%s_%s" % (self.prefix, self.name))
         if not os.path.exists(exp_folder):
             os.mkdir(exp_folder, 0755)
 
