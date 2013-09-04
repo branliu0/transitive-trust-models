@@ -71,8 +71,8 @@ class ExperimentSet(object):
 
                 params[self.ind_param_name] = val
                 exp = Experiment(**params)
-                exp.compute_informativeness()
                 self.experiments[val].append(exp)
+                exp.compute_informativeness()
 
                 elapsed_time = time.clock() - start_time
                 print "Experiment %d added in %0.2f seconds" % \
