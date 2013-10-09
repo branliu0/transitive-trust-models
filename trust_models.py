@@ -20,6 +20,11 @@ class TrustModels(object):
     models.
     """
 
+    # This is the restart probability, i.e., the probability that at each step
+    # of a random walk, that the walk will restart. This value is used in
+    # PageRank, Hitting Time, and Hitting Time PageRank.
+    ALPHA = 0.15
+
     def __init__(self, graph):
         """
         Args:
@@ -34,7 +39,7 @@ class TrustModels(object):
         """ Pagerank algorithm with beta = 0.85.
 
         If unweighted, then every outgoing edge is considered uniformly.
-        Otherwise, outgonig edges are weighted by their given weights.
+        Otherwise, outgoing edges are weighted by their given weights.
 
         Returns:
             An array where the ith element corresponds to the pagerank score
@@ -77,8 +82,6 @@ class TrustModels(object):
 
     def _hitting_time_single(self, target_node, pretrust_set, weighted=True):
         """ Returns the hitting time for a single node. """
-        RESTART_PROB = 0.15
-
         # TODO: Can tune these numbers to get to a reasonable epsilon
         MIN_ITERS = 3000
         MAX_ITERS = 5000
@@ -115,7 +118,7 @@ class TrustModels(object):
                     num_hits += 1
                     break
 
-                if utils.random_true(RESTART_PROB):
+                if utils.random_true(self.ALPHA):
                     break  # We jumped; start next iteration
                 else:
                     num_steps += 1
@@ -132,8 +135,7 @@ class TrustModels(object):
         return float(num_hits) / num_iters
 
     def _hitting_time_all(self, pretrust_set, weighted=True):
-        NUM_ITERS = 100000
-        RESTART_PROB = 0.15
+        NUM_ITERS = 1000000
 
         def generate_walks(node, size=100):
             edges = self.graph.edges(node, data=True)
@@ -149,7 +151,7 @@ class TrustModels(object):
                 return [random.choice(neighbors) for _ in xrange(size)]
 
         def generate_coin_flips(size):
-            return list(stats.bernoulli.rvs(RESTART_PROB, size=size))
+            return list(stats.bernoulli.rvs(self.ALPHA, size=size))
 
         hits = np.zeros(self.num_nodes)
         coin_flips = generate_coin_flips(8 * NUM_ITERS)
@@ -180,11 +182,10 @@ class TrustModels(object):
         return list(hits / NUM_ITERS)
 
     def hitting_time(self, pretrust_strategy, weighted=True):
-        """ Hitting Time algorithm with beta = 0.85.
+        """ Hitting Time algorithm
 
-        The Hitting Time of a node is the probability that
-
-        Every outgoing edge is considered uniformly.
+        The Hitting Time of a node is the probability that a random walk
+        started from a pretrusted set hits the node before jumping/restarting.
 
         Args:
             pretrust_strategy: 'all', 'prob', or 'top'. See
@@ -200,46 +201,58 @@ class TrustModels(object):
         return self._hitting_time_all(pretrust_set, weighted)
 
     def hitting_pagerank(self, pretrust_strategy):
-        BETA = 0.85
+        """ Uses an eigenvector method to compute hitting time.
 
+        Args:
+            pretrust_strategy: 'all', 'prob', or 'top'. See
+                _hitting_time_pretrusted_set for more details.
+
+        Returns:
+            An array where the ith element corresponds to the hitting time
+            of agent i.
+        """
         pretrust_set = self._hitting_time_pretrusted_set(pretrust_strategy)
+
+        # Restart distribution: Uniform across all pretrusted nodes
+        restart = np.zeros(self.num_nodes)
+        restart[list(pretrust_set)] = 1.0/len(pretrust_set)
 
         scores = []
         for i in xrange(self.num_nodes):
             adj_matrix = nx.to_numpy_matrix(self.graph)
 
             # Delete the out-nodes for node i
-            adj_matrix[i, :] = 0
+            adj_matrix[i] = 0
 
-            # ?? Add constant to dangling nodes' row
-            # dangling = np.where(adj_matrix.sum(axis=1) == 0)
-            # for d in dangling[0]:
-                # adj_matrix[d] = 1.0 / self.num_nodes
-
-            # Normalize for non-zero rows
+            # For dangling nodes (those without outgoing edges), we set their
+            # outgoing edges to the restart distribution.
             for j in xrange(self.num_nodes):
-                if adj_matrix[j].sum() != 0:
-                    adj_matrix[j] /= adj_matrix[j].sum()
+                if adj_matrix[j].sum() == 0:
+                    adj_matrix[j] = restart
 
-            # Add in restart_probability
-            restart = np.zeros(self.num_nodes)
-            restart[list(pretrust_set)] = 1
-            restart /= restart.sum()
+            # Normalize outgoing edge weights for all nodes
+            for j in xrange(self.num_nodes):
+                adj_matrix[j] /= adj_matrix[j].sum()
 
-            # Add the restart distribution to the matrix
-            htpr_matrix = BETA * adj_matrix + \
-                    (1 - BETA) * np.outer(np.ones(self.num_nodes), restart)
+            # Now add in the restart distribution to the matrix.
+            htpr_matrix = (1 - self.ALPHA) * adj_matrix + \
+                    self.ALPHA * np.outer(np.ones(self.num_nodes), restart)
 
-            # Take the dominant eigenvector, and pull out the score
+            # To obtain PageRank score, take the dominant eigenvector, and
+            # pull out the score for node i
             eigenvalues, eigenvectors = np.linalg.eig(htpr_matrix.T)
             dominant_index = eigenvalues.argsort()[-1]
             pagerank = np.array(eigenvectors[:, dominant_index]).flatten().real
-
-            # Take out the normalized score
             pagerank /= np.sum(pagerank)
-            scores.append(pagerank[i])
 
-        return scores
+            # Using Theorem 1 equation (ii) from Sheldon & Hopcroft 2007 and
+            # using the fact that for node i, the expected return time is just
+            # one more than the expected hitting time, since the first step
+            # away from node i will always be to a node in the pretrusted set,
+            # we arrive at this equation for deriving hitting time.
+            scores.append(1.0 / (1 - self.ALPHA + self.ALPHA / pagerank[i]))
+
+        return scores / np.sum(scores)
 
     def max_flow(self):
         """ All-pairs maximum flow.
