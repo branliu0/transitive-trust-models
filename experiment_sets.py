@@ -157,7 +157,7 @@ class ExperimentSet(object):
 
     def plot(self):
         for corrname in Experiment.CORRELATION_NAMES:
-            for modelname in self.results[corrname].keys():
+            for modelname in [x[1] for x in Experiment.TTM_PARAMS]:
                 points = sorted(self.results[corrname][modelname].items())
                 plt.plot([x[0] for x in points], [x[1] for x in points],
                          self.PLOT_MARKERS[modelname], label=modelname)
