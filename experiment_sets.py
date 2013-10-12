@@ -331,9 +331,7 @@ class SampleCountExperimentSet(ExperimentSet):
     name = 'sample_count'
     plot_xlabel = 'Number of samples per edge'
 
-    # TODO: Need to figure out how to plot infinity
-    # DEFAULT_SAMPLE_COUNTS = [1, 2, 3, 4, 5, 10, 20, 100, float('inf')]
-    DEFAULT_SAMPLE_COUNTS = [1, 2, 3, 4, 5, 10, 20, 100]
+    DEFAULT_SAMPLE_COUNTS = [1, 2, 4, 8, 16, 32, 64, 128, float('inf')]
 
     def __init__(self, num_nodes, agent_type_prior, edge_strategy,
                  edges_per_node, edge_weight_strategy, prefix,

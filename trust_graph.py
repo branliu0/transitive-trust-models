@@ -77,14 +77,7 @@ class TrustGraph(nx.DiGraph):
             An array of length num_nodes with floats in [0, 1] repesenting
             the agent types.
         """
-        if agent_type_prior == 'uniform':
-            return sorted(stats.uniform.rvs(size=num_nodes))
-        elif agent_type_prior == 'normal':
-            return sorted(stats.truncnorm.rvs(
-                -1, 1, loc=0.5, scale=0.5, size=num_nodes))
-        elif agent_type_prior == 'beta':
-            return sorted(stats.beta.rvs(2, 2, size=num_nodes))
-        raise ValueError("Invalid agent type prior")
+        return sorted(utils.agent_type_rv(agent_type_prior).rvs(size=num_nodes))
 
     @staticmethod
     def initialize_edges(agent_types, edge_strategy, edges_per_node):
@@ -143,42 +136,51 @@ class TrustGraph(nx.DiGraph):
             of an edge. Otherwise the matrix entry contains the weight of that
             edge.
         """
+        # Helper method to calculate the expected edge_weight
+        # (for when num_samples is infinity)
+        def expected_edge_weight(i, j):
+            theta_i, theta_j = agent_types[i], agent_types[j]
+            if edge_weight_strategy == 'sample':
+                return theta_j
+            elif edge_weight_strategy == 'noisy':
+                return (1 - theta_i) * 0.5 + theta_i * theta_j
+            elif edge_weight_strategy == 'prior':
+                return (1 - theta_i) * utils.expected_noisy_theta(
+                    agent_type_prior, theta_i, theta_j) + theta_i * theta_j
+            raise ValueError("Invalid edge weight strategy")
+
+        # Helper method to sample the edge_weight
+        def sampled_edge_weight(i, j):
+            theta_i, theta_j = agent_types[i], agent_types[j]
+            if edge_weight_strategy == 'sample':
+                return stats.binom.rvs(num_samples, theta_j) / float(num_samples)
+            elif edge_weight_strategy == 'noisy':
+                # First find number of "true" samples
+                true_samples = stats.binom.rvs(num_samples, theta_i)
+                # Then sample from Bern[theta_j] `true_samples` times and from
+                # Bern[0.5] (num_samples - true_samples) times.
+                return (stats.binom.rvs(true_samples, theta_j) +
+                        stats.binom.rvs(num_samples - true_samples, 0.5)) / \
+                        float(num_samples)
+            elif edge_weight_strategy == 'prior':
+                true_samples = stats.binom.rvs(num_samples, theta_i)
+                return (stats.binom.rvs(true_samples, theta_j) +
+                    sum(stats.bernoulli.rvs(utils.noisy_theta(
+                            agent_type_prior, theta_i, theta_j))
+                        for _ in xrange(num_samples - true_samples))) / \
+                    float(num_samples)
+            raise ValueError("Invalid edge weight strategy")
+
         n = len(agent_types)
         weights = np.repeat(None, n * n).reshape(n, n)
-        if edge_weight_strategy == 'sample':
-            # Simply sample from Bernoulli[theta_j] num_sample times
-            for i in xrange(n):
-                for j in edges[i]:
-                    weights[i][j] = stats.binom.rvs(
-                        num_samples, agent_types[j]) / float(num_samples)
-            return weights
-        elif edge_weight_strategy == 'noisy':
-            # With probability (1 - theta_i), sample instead from Bernoulli[0.5]
-            for i, agent_type in enumerate(agent_types):
-                for j in edges[i]:
-                    sum = 0
-                    for t in xrange(num_samples):
-                        if utils.random_true(agent_type):
-                            sum += stats.bernoulli.rvs(agent_types[j])
-                        else:
-                            sum += stats.bernoulli.rvs(0.5)
-                    weights[i][j] = float(sum) / num_samples
-            return weights
-        elif edge_weight_strategy == 'prior':
-            # With probability (1 - theta_i), sample from a prior distribution
-            for i, agent_type in enumerate(agent_types):
-                for j in edges[i]:
-                    sum = 0
-                    for t in xrange(num_samples):
-                        if utils.random_true(agent_type):
-                            sum += stats.bernoulli.rvs(agent_types[j])
-                        else:
-                            sum += stats.bernoulli.rvs(
-                                utils.noisy_theta(agent_type_prior,
-                                                  agent_type, agent_types[j]))
-                    weights[i][j] = float(sum) / num_samples
-            return weights
-        raise ValueError("Invalid edge weight strategy")
+
+        for i in xrange(n):
+            for j in edges[i]:
+                if num_samples == float('inf'):
+                    weights[i][j] = expected_edge_weight(i, j)
+                else:
+                    weights[i][j] = sampled_edge_weight(i, j)
+        return weights
 
     @staticmethod
     def g50():
