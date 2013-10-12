@@ -290,6 +290,26 @@ class EdgeCountExperimentSet(ExperimentSet):
     def __init__(self, num_nodes, agent_type_prior, edge_strategy,
                  edge_weight_strategy, num_weight_samples,
                  prefix, num_experiments, edge_counts=None):
+        """
+        Args:
+            num_nodes: Number of nodes in this graph.
+            agent_type_prior:
+                'uniform': Selected from Unif[0, 1]
+                'normal': Selected from Normal[0.5, 1] truncated to [0, 1]
+                'beta': Selected from Beta[2, 2]
+            edge_strategy:
+                'uniform': Neighbors are uniformly selected
+                'cluster': High types are more likely to connect to high types
+            edge_weight_strategy:
+                'sample': Sample from true agent type
+                'noisy': Low types more likely to sample from Bernoulli[0.5]
+                'prior': Low types more likely to sampel from prior distribution
+            num_weight_samples: Number of times to sample for determining
+                edge weights.
+            prefix: Prefix used for saving
+            num_experiments: Number of experiments to run per parameter set
+            edge_counts: An array of edge counts to vary over
+        """
         if not edge_counts:
             edge_counts = self.DEFAULT_EDGE_COUNTS
 
@@ -318,6 +338,25 @@ class SampleCountExperimentSet(ExperimentSet):
     def __init__(self, num_nodes, agent_type_prior, edge_strategy,
                  edges_per_node, edge_weight_strategy, prefix,
                  num_experiments, sample_counts=None):
+        """
+        Args:
+            num_nodes: Number of nodes in this graph.
+            agent_type_prior:
+                'uniform': Selected from Unif[0, 1]
+                'normal': Selected from Normal[0.5, 1] truncated to [0, 1]
+                'beta': Selected from Beta[2, 2]
+            edge_strategy:
+                'uniform': Neighbors are uniformly selected
+                'cluster': High types are more likely to connect to high types
+            edges_per_node: The number of outgoing edges each node has.
+            edge_weight_strategy:
+                'sample': Sample from true agent type
+                'noisy': Low types more likely to sample from Bernoulli[0.5]
+                'prior': Low types more likely to sampel from prior distribution
+            prefix: Prefix used for saving
+            num_experiments: Number of experiments to run per parameter set
+            sample_counts: An array of sample counts to vary over
+        """
         if not sample_counts:
             sample_counts = self.DEFAULT_SAMPLE_COUNTS
 
