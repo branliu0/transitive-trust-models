@@ -1,5 +1,6 @@
 from abc import ABCMeta
 from collections import defaultdict
+import math
 import os
 import time
 import sys
@@ -155,12 +156,25 @@ class ExperimentSet(object):
         'shortest_path_weighted_means': 'c--^'
     }
 
+    def transform_x(self, xs):
+        """ Function to transform the x-axis (e.g., use a log scale)
+
+        Returns:
+            A tuple (xvals, xticks) where xvals are the actual x-values to be
+            used for graphing, and xticks, if non-empty, are strings to be
+            used for x-axis ticks.
+        """
+        return xs, xs
+
     def plot(self):
         for corrname in Experiment.CORRELATION_NAMES:
-            for modelname in [x[1] for x in Experiment.TTM_PARAMS]:
+            for modelname in Experiment.MODEL_NAMES:
                 points = sorted(self.results[corrname][modelname].items())
-                plt.plot([x[0] for x in points], [x[1] for x in points],
+                xvals, xticks = self.transform_x([x[0] for x in points])
+                plt.plot(xvals, [x[1] for x in points],
                          self.PLOT_MARKERS[modelname], label=modelname)
+                if xticks:
+                    plt.xticks(xvals, xticks)
             plt.suptitle(self.plot_title)
             plt.xlabel(self.plot_xlabel)
             plt.ylabel(corrname + ' correlation')
@@ -171,7 +185,8 @@ class ExperimentSet(object):
     def plot_runtimes(self):
         for modelname in Experiment.MODEL_NAMES:
             points = sorted(self.runtimes[modelname].items())
-            plt.plot([x[0] for x in points], [x[1] for x in points],
+            plt.plot(self.transform_x([x[0] for x in points]),
+                     [x[1] for x in points],
                      self.PLOT_MARKERS[modelname], label=modelname)
         plt.suptitle("Runtimes for transitive trust models")
         plt.xlabel(self.plot_xlabel)
@@ -329,7 +344,7 @@ class EdgeCountExperimentSet(ExperimentSet):
 
 class SampleCountExperimentSet(ExperimentSet):
     name = 'sample_count'
-    plot_xlabel = 'Number of samples per edge'
+    plot_xlabel = 'log2(samples per edge)'
 
     DEFAULT_SAMPLE_COUNTS = [1, 2, 4, 8, 16, 32, 64, 128, float('inf')]
 
@@ -366,7 +381,22 @@ class SampleCountExperimentSet(ExperimentSet):
             'edge_weight_strategy': edge_weight_strategy,
         }
 
-        self.plot_title = 'Varying edge samples with graph of %d nodes' % num_nodes
+        self.plot_title = ('Varying edge weight samples: %d nodes and %d edges/node' %
+                           (num_nodes, edges_per_node))
 
         super(SampleCountExperimentSet, self).__init__(
             params, 'num_weight_samples', sample_counts, prefix, num_experiments)
+
+    def transform_x(self, xs):
+        """ Use a log-2 scale and handle values of infinity. """
+        # Values of infinity are set as 3 ticks higher than the max value
+        INF_OFFSET = 3
+        transformed = [math.log(x, 2) for x in xs if x != float('inf')]
+        ticks = list(transformed)
+        try:
+            inf_idx = next(i for i, x in enumerate(xs) if x == float('inf'))
+            transformed.insert(inf_idx, max(transformed) + INF_OFFSET)
+            ticks.insert(inf_idx, 'infinity')
+        except StopIteration:
+            pass
+        return transformed, ticks
