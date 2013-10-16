@@ -166,8 +166,11 @@ class ExperimentSet(object):
         """
         return xs, xs
 
-    def plot(self):
-        for corrname in Experiment.CORRELATION_NAMES:
+    def plot(self, filename=None):
+        extra_artists = []
+        n = len(Experiment.CORRELATION_NAMES)
+        for i, corrname in enumerate(Experiment.CORRELATION_NAMES):
+            plt.subplot(n, 1, i + 1)
             for modelname in Experiment.MODEL_NAMES:
                 points = sorted(self.results[corrname][modelname].items())
                 xvals, xticks = self.transform_x([x[0] for x in points])
@@ -175,11 +178,25 @@ class ExperimentSet(object):
                          self.PLOT_MARKERS[modelname], label=modelname)
                 if xticks:
                     plt.xticks(xvals, xticks)
-            plt.suptitle(self.plot_title)
             plt.xlabel(self.plot_xlabel)
             plt.ylabel(corrname + ' correlation')
-            plt.legend(loc='center left', bbox_to_anchor=(1, 0.5),
-                       fancybox=True, shadow=True)
+            extra_artists.append(
+                plt.legend(loc='center left', bbox_to_anchor=(1, 0.5),
+                           fancybox=True, shadow=True))
+
+        fig = plt.gcf()
+        fig.set_figheight(n * fig.get_figheight())  # Prevent squish
+        fig.set_figwidth(1.4 * fig.get_figwidth())  # A bit more width is nice
+        extra_artists.append(fig.suptitle(self.plot_title))
+
+        if filename and isinstance(filename, str):
+            # Need to specify the extra artists so that they show up in the
+            # saved image. Calling bbox_inches='tight' makes it calculate the
+            # correct bounds for the image.
+            plt.savefig(filename, bbox_extra_artists=extra_artists,
+                        bbox_inches='tight')
+            plt.clf()  # Clear figure
+        else:
             plt.show()
 
     def plot_runtimes(self):

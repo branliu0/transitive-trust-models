@@ -74,8 +74,8 @@ class Experiment(object):
     # 5. (dict) kwargs to be passed to the ttm function
     TTM_PARAMS = [
         (True, 'pagerank', 'pagerank', [], {}),
-        (True, 'hitting_pagerank_all', 'hitting_pagerank', ['all'], {}),
-        (True, 'hitting_pagerank_top', 'hitting_pagerank', ['top'], {}),
+        (True, 'hitting_time_all', 'hitting_pagerank', ['all'], {}),
+        (True, 'hitting_time_top', 'hitting_pagerank', ['top'], {}),
         # (True, 'hitting_time_all', 'hitting_time', ['all'], {}),
         # (True, 'hitting_time_top', 'hitting_time', ['top'], {}),
         (False, 'max_flow', 'max_flow', [], {}),
