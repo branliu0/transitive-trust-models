@@ -84,7 +84,13 @@ class Experiment(object):
 
     MODEL_NAMES = [x[1] for x in TTM_PARAMS]
 
-    CORRELATION_NAMES = ['pearson', 'kendalltau', 'spearman']
+    CORRELATIONS = {
+        # 'pearson': stats.pearsonr,
+        'kendalltau': stats.kendalltau,
+        'spearman': stats.spearmanr,
+    }
+    # Manually writing out the names to enforce ordering
+    CORRELATION_NAMES = ['kendalltau', 'spearman']
 
     def __init__(self, num_nodes, agent_type_prior, edge_strategy,
                  edges_per_node, edge_weight_strategy, num_weight_samples):
@@ -101,11 +107,6 @@ class Experiment(object):
         self.global_ttms = defaultdict(dict)
         self.personalized_ttms = defaultdict(dict)
         self.info_scores = defaultdict(dict)
-        self.correlations = {
-            'pearson': stats.pearsonr,
-            'kendalltau': stats.kendalltau,
-            'spearman': stats.spearmanr
-        }
         self.runtimes = dict()
 
     def compute_informativeness(self):
@@ -138,13 +139,13 @@ class Experiment(object):
         """
         at = self.graph.agent_types
         for modelname, model in self.global_ttms.items():
-            for corrname, corr in self.correlations.items():
+            for corrname, corr in self.CORRELATIONS.items():
                 info_score, _ = corr(at, model['scores'])
                 model[corrname] = info_score
                 self.info_scores[corrname][modelname] = info_score
 
         for modelname, model in self.personalized_ttms.items():
-            for corrname, corr in self.correlations.items():
+            for corrname, corr in self.CORRELATIONS.items():
                 model[corrname] = {}
                 model[corrname]['values'] = []
                 for row in model['scores']:
