@@ -7,6 +7,7 @@ import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy import stats
 import yaml
 
 from experiment import Experiment
@@ -79,7 +80,7 @@ class ExperimentSet(object):
                 print "Experiment %d added in %0.2f seconds" % \
                         (experiment_count, elapsed_time)
 
-                self.save_experiment(exp, experiment_count)
+                # self.save_experiment(exp, experiment_count)
 
         self.aggregate_results()
         self.aggregate_runtimes()
@@ -104,17 +105,20 @@ class ExperimentSet(object):
         - Dict of dicts given by correlation type gives a set of lines for a graph
         - self.results provides a graph for each type of correlation measure.
         """
-        self.results = {}
+        self.results = {}; self.errors = {}
         for corrname in Experiment.CORRELATION_NAMES:
-            self.results[corrname] = {}
+            self.results[corrname] = {}; self.errors[corrname] = {}
             for modelname in Experiment.MODEL_NAMES:
                 self.results[corrname][modelname] = {}
+                self.errors[corrname][modelname] = {}
                 for val in self.ind_param_values:
-                    avg_score = np.mean([
-                        exp.info_scores[corrname][modelname]
-                        for exp in self.experiments[val]])
-                    self.results[corrname][modelname][val] = avg_score
+                    scores = [exp.info_scores[corrname][modelname]
+                              for exp in self.experiments[val]]
+                    self.results[corrname][modelname][val] = np.mean(scores)
+                    # 95% Confidence Intervals, assuming normality.
+                    self.errors[corrname][modelname][val] = 1.96 * stats.sem(scores)
 
+        self._save(self.errors, "errors")
         self._save(self.results, "results")
 
     def aggregate_runtimes(self):
@@ -136,6 +140,8 @@ class ExperimentSet(object):
                 avg_runtime = np.mean([exp.runtimes[modelname]
                                        for exp in self.experiments[val]])
                 self.runtimes[modelname][val] = avg_runtime
+
+        self._save(self.runtimes, "runtimes")
 
     #################################################
     # Functions related to display and visualization
@@ -174,11 +180,14 @@ class ExperimentSet(object):
             for modelname in Experiment.MODEL_NAMES:
                 points = sorted(self.results[corrname][modelname].items())
                 xvals, xticks = self.transform_x([x[0] for x in points])
-                plt.plot(xvals, [x[1] for x in points],
-                         self.PLOT_MARKERS[modelname], label=modelname)
+                yerrs = [x[1] for x in sorted(
+                    self.errors[corrname][modelname].items())]
+                plt.errorbar(xvals, [x[1] for x in points], yerrs,
+                         fmt=self.PLOT_MARKERS[modelname], label=modelname)
                 if xticks:
                     plt.xticks(xvals, xticks)
             plt.xlabel(self.plot_xlabel)
+            plt.margins(0.1)
             plt.ylabel(corrname + ' correlation')
             extra_artists.append(
                 plt.legend(loc='center left', bbox_to_anchor=(1, 0.5),
@@ -187,7 +196,7 @@ class ExperimentSet(object):
         fig = plt.gcf()
         fig.set_figheight(n * fig.get_figheight())  # Prevent squish
         fig.set_figwidth(1.4 * fig.get_figwidth())  # A bit more width is nice
-        extra_artists.append(fig.suptitle(self.plot_title))
+        extra_artists.append(fig.suptitle(self.plot_title))  # Add plot title
 
         if filename and isinstance(filename, str):
             # Need to specify the extra artists so that they show up in the
@@ -195,7 +204,8 @@ class ExperimentSet(object):
             # correct bounds for the image.
             plt.savefig(filename, bbox_extra_artists=extra_artists,
                         bbox_inches='tight')
-            plt.clf()  # Clear figure
+            # Clear figure, or this figure gets re-painted by subsequent calls
+            plt.clf()
         else:
             plt.show()
 
@@ -244,8 +254,9 @@ num_experiments      = {num_experiments}""".format(**self.__dict__)
         if load_experiments:
             exp_set.load_experiments()
 
-        if os.path.exists(exp_set._filename("results")):
-            exp_set.results = exp_set._load("results")
+        for prop in ["results", "errors", "runtimes"]:
+            if os.path.exists(exp_set._filename(prop)):
+                setattr(exp_set, prop, exp_set._load(prop))
 
         return exp_set
 
@@ -354,7 +365,7 @@ class EdgeCountExperimentSet(ExperimentSet):
         }
 
         self.plot_title = (
-            "TTM Accuracy: Varying number of edges per node\n"
+            "TTM Informativeness: Varying number of edges per node\n"
             "%d nodes, '%s' prior, '%s' edges, '%s' weights (%d samples) (n = %d)"
             % (num_nodes, agent_type_prior, edge_strategy, edge_weight_strategy,
                num_weight_samples, num_experiments))
@@ -403,7 +414,7 @@ class SampleCountExperimentSet(ExperimentSet):
         }
 
         self.plot_title = (
-            "TTM Accuracy: Varying number of weight samples per edge\n"
+            "TTM Informativeness: Varying number of weight samples per edge\n"
             "%d nodes/%d edges per node, '%s' prior, '%s' edges, '%s' weights (n = %d)"
             % (num_nodes, edges_per_node, agent_type_prior, edge_strategy,
                edge_weight_strategy, num_experiments))
