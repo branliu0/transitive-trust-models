@@ -353,7 +353,11 @@ class EdgeCountExperimentSet(ExperimentSet):
             'num_weight_samples': num_weight_samples
         }
 
-        self.plot_title = 'Varying edge count with graph of %d nodes' % num_nodes
+        self.plot_title = (
+            "TTM Accuracy: Varying number of edges per node\n"
+            "%d nodes, '%s' prior, '%s' edges, '%s' weights (%d samples) (n = %d)"
+            % (num_nodes, agent_type_prior, edge_strategy, edge_weight_strategy,
+               num_weight_samples, num_experiments))
 
         super(EdgeCountExperimentSet, self).__init__(
             params, 'edges_per_node', edge_counts, prefix, num_experiments)
@@ -398,8 +402,11 @@ class SampleCountExperimentSet(ExperimentSet):
             'edge_weight_strategy': edge_weight_strategy,
         }
 
-        self.plot_title = ('Varying edge weight samples: %d nodes and %d edges/node' %
-                           (num_nodes, edges_per_node))
+        self.plot_title = (
+            "TTM Accuracy: Varying number of weight samples per edge\n"
+            "%d nodes/%d edges per node, '%s' prior, '%s' edges, '%s' weights (n = %d)"
+            % (num_nodes, edges_per_node, agent_type_prior, edge_strategy,
+               edge_weight_strategy, num_experiments))
 
         super(SampleCountExperimentSet, self).__init__(
             params, 'num_weight_samples', sample_counts, prefix, num_experiments)
