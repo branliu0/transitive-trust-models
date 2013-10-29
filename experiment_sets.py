@@ -72,9 +72,20 @@ class ExperimentSet(object):
                 start_time = time.clock()
 
                 params[self.ind_param_name] = val
-                exp = Experiment(**params)
-                self.experiments[val].append(exp)
-                exp.compute_informativeness()
+
+                # Sometimes running experiments throws exceptions -- mainly
+                # max flow for some as of now unknown reason.
+                # We could possibly be concerned about slight biasing because
+                # we're not getting an unbiased distribution over graphs, but
+                # this seems to happen rarely enough that it isn't a problem.
+                while True:
+                    try:
+                        exp = Experiment(**params)
+                        self.experiments[val].append(exp)
+                        exp.compute_informativeness()
+                        break
+                    except Exception, e:
+                        print str(e)
 
                 elapsed_time = time.clock() - start_time
                 print "Experiment %d added in %0.2f seconds" % \
