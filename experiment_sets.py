@@ -63,6 +63,9 @@ class ExperimentSet(object):
         if clear:
             self.experiments = defaultdict(list)
 
+        if self.failed_experiments is None:
+            self.failed_experiments = []
+
         experiment_count = sum(len(x) for x in self.experiments.values())
         params = self.experiment_params.copy()
 
@@ -85,6 +88,7 @@ class ExperimentSet(object):
                         exp.compute_informativeness()
                         break
                     except Exception, e:
+                        self.failed_experiments.append(exp)
                         print str(e)
 
                 elapsed_time = time.clock() - start_time
