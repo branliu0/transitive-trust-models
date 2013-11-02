@@ -130,3 +130,14 @@ def resample_unique(rv, existing_values=[]):
         sample = rv.rvs()
         if sample not in existing_values:
             return sample
+
+
+def binom(n, p, size=1):
+    """ Binomial function.
+
+    Same as stats.binom.rvs() except it returns 0 if n = 0.
+    """
+    if n == 0:
+        return 0 if size == 1 else [0] * size
+    else:
+        return stats.binom.rvs(n, p, size)

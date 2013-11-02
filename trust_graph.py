@@ -1,6 +1,7 @@
 import networkx as nx
 import numpy as np
 from scipy import stats
+
 import utils
 
 class TrustGraph(nx.DiGraph):
@@ -153,18 +154,18 @@ class TrustGraph(nx.DiGraph):
         def sampled_edge_weight(i, j):
             theta_i, theta_j = agent_types[i], agent_types[j]
             if edge_weight_strategy == 'sample':
-                return stats.binom.rvs(num_samples, theta_j) / float(num_samples)
+                return utils.binom(num_samples, theta_j) / float(num_samples)
             elif edge_weight_strategy == 'noisy':
                 # First find number of "true" samples
-                true_samples = stats.binom.rvs(num_samples, theta_i)
+                true_samples = utils.binom(num_samples, theta_i)
                 # Then sample from Bern[theta_j] `true_samples` times and from
                 # Bern[0.5] (num_samples - true_samples) times.
-                return (stats.binom.rvs(true_samples, theta_j) +
-                        stats.binom.rvs(num_samples - true_samples, 0.5)) / \
+                return (utils.binom(true_samples, theta_j) +
+                        utils.binom(num_samples - true_samples, 0.5)) / \
                         float(num_samples)
             elif edge_weight_strategy == 'prior':
-                true_samples = stats.binom.rvs(num_samples, theta_i)
-                return (stats.binom.rvs(true_samples, theta_j) +
+                true_samples = utils.binom(num_samples, theta_i)
+                return (utils.binom(true_samples, theta_j) +
                     sum(stats.bernoulli.rvs(utils.noisy_theta(
                             agent_type_prior, theta_i, theta_j))
                         for _ in xrange(num_samples - true_samples))) / \
