@@ -100,7 +100,8 @@ class TrustGraph(nx.DiGraph):
             # Uniformly pick a subset from all possible nodes.
             for i in xrange(len(agent_types)):
                 edges.append(np.random.choice(
-                    np.delete(np.arange(n), i), edges_per_node))
+                    np.delete(np.arange(n), i), edges_per_node,
+                    replace=False))
             return edges
         elif edge_strategy == 'cluster':
             # High types are more likely to be connected to other high types
