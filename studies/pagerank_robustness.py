@@ -4,8 +4,10 @@ import sys
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+from scipy import stats
 
 from trust_graph import TrustGraph
+from trust_models import TrustModels
 
 NUM_NODES = 50
 NUM_EDGES = 20
@@ -31,3 +33,34 @@ def pagerank_outedge_robustness():
     plt.xlabel('Number of outedges for node 0')
     plt.ylabel('PageRank score for node 0')
 
+
+def pagerank_vs_hitting_time(num_graphs):
+    graphs = []
+    prs = []
+    hts = []
+    corrs = []
+    for i in xrange(num_graphs):
+        g = nx.gnp_random_graph(NUM_NODES, float(NUM_EDGES) / NUM_NODES,
+                                directed=True)
+        graphs.append(g)
+        for e in g.edges_iter():
+            g[e[0]][e[1]]['weight'] = random.random()
+
+        m = TrustModels(g)
+
+        prs.append(m.pagerank())
+        hts.append(m.hitting_pagerank('all'))
+        corrs.append(stats.spearmanr(prs[i], hts[i])[0])
+
+        sys.stdout.write('.')
+
+    # Plot correlations
+    plt.hist(corrs)
+
+    plt.suptitle('Correlation of PageRank and Eigen Hitting Time\n'
+                 'Trials on Erdos-Renyi graphs with %d nodes and prob %0.2f'
+                 % (NUM_NODES, float(NUM_EDGES) / NUM_NODES))
+    plt.xlabel('Spearman rank-correlation')
+    plt.ylabel('Number of graphs (independent trials)')
+    plt.margins(0.07)
+    plt.show()
