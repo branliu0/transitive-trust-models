@@ -221,16 +221,19 @@ class TrustModels(object):
         for i in xrange(self.num_nodes):
             adj_matrix = nx.to_numpy_matrix(self.graph)
 
-            # Delete the out-nodes for node i
-            adj_matrix[i] = 0
+            # Delete the out-nodes for node i, replace them with outedges
+            # that go straight back to the restart distribution, thus
+            # simulating the end of a "hit" by returning to the restart
+            # distribution.
+            adj_matrix[i] = restart
 
-            # For dangling nodes (those without outgoing edges), we set their
-            # outgoing edges to the restart distribution.
+            # For dangling nodes, we add a self-edge, which simulates getting
+            # "stuck" until we teleport.
             for j in xrange(self.num_nodes):
                 if adj_matrix[j].sum() == 0:
-                    adj_matrix[j] = restart
+                    adj_matrix[j, j] = 1
 
-            # Normalize outgoing edge weights for all nodes
+            # Normalize outgoing edge weights for all nodes.
             for j in xrange(self.num_nodes):
                 adj_matrix[j] /= adj_matrix[j].sum()
 
@@ -252,7 +255,7 @@ class TrustModels(object):
             # we arrive at this equation for deriving hitting time.
             scores.append(1.0 / (1 - self.ALPHA + self.ALPHA / pagerank[i]))
 
-        return scores / np.sum(scores)
+        return scores
 
     def max_flow(self):
         """ All-pairs maximum flow.
