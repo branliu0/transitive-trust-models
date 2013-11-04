@@ -82,10 +82,10 @@ class ExperimentSet(object):
                 # we're not getting an unbiased distribution over graphs, but
                 # this seems to happen rarely enough that it isn't a problem.
                 while True:
+                    exp = Experiment(**params)
                     try:
-                        exp = Experiment(**params)
-                        self.experiments[val].append(exp)
                         exp.compute_informativeness()
+                        self.experiments[val].append(exp)
                         break
                     except Exception, e:
                         self.failed_experiments.append(exp)
