@@ -134,9 +134,7 @@ class TrustModels(object):
 
         return float(num_hits) / num_iters
 
-    def _hitting_time_all(self, pretrust_set, weighted=True):
-        NUM_ITERS = 1000000
-
+    def _hitting_time_all(self, pretrust_set, weighted=True, num_iters=1e5):
         def generate_walks(node, size=100):
             edges = self.graph.edges(node, data=True)
             if not edges:
@@ -154,15 +152,15 @@ class TrustModels(object):
             return list(stats.bernoulli.rvs(self.ALPHA, size=size))
 
         hits = np.zeros(self.num_nodes)
-        coin_flips = generate_coin_flips(8 * NUM_ITERS)
+        coin_flips = generate_coin_flips(8 * num_iters)
         walks = [generate_walks(i) for i in xrange(self.num_nodes)]
 
-        for i in xrange(NUM_ITERS):
-            if i % (NUM_ITERS / 50) == 0:
+        for i in xrange(num_iters):
+            if i % (num_iters / 50) == 0:
                 sys.stdout.write('.')
 
             cur_node = random.sample(pretrust_set, 1)[0]
-            current_hits = np.zeros(self.num_nodes)
+            current_hits = dict.fromkeys(self.graph.nodes(), 0)
             while True:
                 current_hits[cur_node] = 1  # Mark as hit, but only once
                 if coin_flips.pop():  # Restart?
@@ -176,12 +174,13 @@ class TrustModels(object):
 
                 cur_node = walks[cur_node].pop()
 
-            hits += current_hits
+            for n in self.graph.nodes():
+                hits[n] += current_hits[n]
 
         print
-        return list(hits / NUM_ITERS)
+        return list(hits / num_iters)
 
-    def hitting_time(self, pretrust_strategy, weighted=True):
+    def hitting_time(self, pretrust_strategy, weighted=True, num_iters=1e5):
         """ Hitting Time algorithm
 
         The Hitting Time of a node is the probability that a random walk
@@ -198,7 +197,7 @@ class TrustModels(object):
             of agent i.
         """
         pretrust_set = self._hitting_time_pretrusted_set(pretrust_strategy)
-        return self._hitting_time_all(pretrust_set, weighted)
+        return self._hitting_time_all(pretrust_set, weighted, num_iters)
 
     def hitting_pagerank(self, pretrust_strategy):
         """ Uses an eigenvector method to compute hitting time.
