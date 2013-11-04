@@ -86,7 +86,7 @@ class Experiment(object):
 
     CORRELATIONS = {
         # 'pearson': stats.pearsonr,
-        'kendalltau': stats.kendalltau,
+        # 'kendalltau': stats.kendalltau,
         'spearman': stats.spearmanr,
     }
     # Manually writing out the names to enforce ordering
