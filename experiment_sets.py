@@ -63,7 +63,7 @@ class ExperimentSet(object):
         if clear:
             self.experiments = defaultdict(list)
 
-        if self.failed_experiments is None:
+        if not hasattr(self, 'failed_experiments'):
             self.failed_experiments = []
 
         experiment_count = sum(len(x) for x in self.experiments.values())
