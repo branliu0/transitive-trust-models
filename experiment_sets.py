@@ -121,7 +121,7 @@ class ExperimentSet(object):
         - self.results provides a graph for each type of correlation measure.
         """
         self.results = {}; self.errors = {}
-        for corrname in Experiment.CORRELATION_NAMES:
+        for corrname in Experiment.CORRELATIONS.keys():
             self.results[corrname] = {}; self.errors[corrname] = {}
             for modelname in Experiment.MODEL_NAMES:
                 self.results[corrname][modelname] = {}
@@ -189,8 +189,8 @@ class ExperimentSet(object):
 
     def plot(self, filename=None):
         extra_artists = []
-        n = len(Experiment.CORRELATION_NAMES)
-        for i, corrname in enumerate(Experiment.CORRELATION_NAMES):
+        n = len(Experiment.CORRELATIONS)
+        for i, corrname in enumerate(Experiment.CORRELATIONS.keys()):
             plt.subplot(n, 1, i + 1)
             for modelname in Experiment.MODEL_NAMES:
                 points = sorted(self.results[corrname][modelname].items())

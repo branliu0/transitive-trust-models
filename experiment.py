@@ -89,8 +89,6 @@ class Experiment(object):
         # 'kendalltau': stats.kendalltau,
         'spearman': stats.spearmanr,
     }
-    # Manually writing out the names to enforce ordering
-    CORRELATION_NAMES = ['kendalltau', 'spearman']
 
     def __init__(self, num_nodes, agent_type_prior, edge_strategy,
                  edges_per_node, edge_weight_strategy, num_weight_samples):
