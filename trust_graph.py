@@ -14,6 +14,11 @@ class TrustGraph(nx.DiGraph):
     'inv_weight' attribute which is the reciprocal of the 'weight' attribute
     for the convenience of the Shortest Path transitive trust model.
     """
+
+    AGENT_TYPE_PRIORS = ['uniform', 'normal', 'beta']
+    EDGE_STRATEGIES = ['uniform', 'cluster']
+    EDGE_WEIGHT_STRATEGIES = ['sample', 'noisy', 'cluster']
+
     def __init__(self, num_nodes, agent_type_prior, edge_strategy,
                      edges_per_node, edge_weight_strategy, num_weight_samples):
         """
@@ -40,6 +45,15 @@ class TrustGraph(nx.DiGraph):
         super(TrustGraph, self).__init__()
 
         MAX_INV_WEIGHT = 100000  # Maximum value for 'inv_weight'
+
+        if agent_type_prior not in self.AGENT_TYPE_PRIORS:
+            raise ValueError(
+                "%s is an invalid agent type prior" % agent_type_prior)
+        if edge_strategy not in self.EDGE_STRATEGIES:
+            raise ValueError("%s is an invalid edge strategy" % edge_strategy)
+        if edge_weight_strategy not in self.EDGE_WEIGHT_STRATEGIES:
+            raise ValueError(
+                "%s is an invalid edge weight strategy" % edge_weight_strategy)
 
         self.num_nodes            = num_nodes
         self.agent_type_prior     = agent_type_prior
