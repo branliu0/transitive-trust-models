@@ -137,7 +137,7 @@ def binom(n, p, size=1):
 
     Same as stats.binom.rvs() except it returns 0 if n = 0.
     """
-    if n == 0:
-        return 0 if size == 1 else [0] * size
+    if size == 1:
+        return 0 if n == 0 else stats.binom.rvs(n, p)
     else:
-        return stats.binom.rvs(n, p, size)
+        return [0] * size if n == 0 else stats.binom.rvs(n, p, size=size)
