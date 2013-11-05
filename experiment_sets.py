@@ -1,6 +1,7 @@
 from abc import ABCMeta
 from collections import defaultdict
 import math
+import multiprocessing
 import os
 import time
 import sys
@@ -13,6 +14,36 @@ import yaml
 from experiment import Experiment
 
 SAVE_FOLDER = os.path.join(os.path.dirname(__file__), '..', 'saved')
+
+def run_experiment(args):
+    """ Parallelizable method for computing experiments.
+
+    This method is used in parallel computation for running experiments in
+    parallel. Due to the nature of pickling, it must be declared globally,
+    because instance methods cannot be pickled.
+    """
+    # args is a tuple, so that we can map over an array of tuples.
+    # see run_parallel_experiments()
+    params, param_name, val = args
+    start_time = time.clock()
+
+    params = params.copy()
+    params[param_name] = val
+
+    while True:
+        exp = Experiment(**params)
+        try:
+            exp.compute_informativeness()
+            break
+        except Exception, e:
+            print str(e)
+
+    elapsed_time = time.clock() - start_time
+    print "Experiment with val %s added in %0.2f seconds" % \
+            (str(val), elapsed_time)
+
+    return val, exp
+
 
 class ExperimentSet(object):
     """ Abstract base class used for forming experiment sets.
@@ -58,6 +89,27 @@ class ExperimentSet(object):
     ###################################
     # Functions related to computation
     ###################################
+
+    def run_parallel_experiments(self):
+        # NOTE: Always re-runs all the experiments.
+        self.experiments = defaultdict(list)
+
+        if not hasattr(self, 'failed_experiments'):
+            self.failed_experiments = []
+
+        vals = np.array([np.repeat(val, self.num_experiments)
+                         for val in self.ind_param_values]).flatten()
+        args = [(self.experiment_params, self.ind_param_name, v) for v in vals]
+
+        pool = multiprocessing.Pool(processes=4)
+        results = pool.map(run_experiment, args)
+        pool.close()
+        pool.join()
+        for val, exp in results:
+            self.experiments[val].append(exp)
+
+        self.aggregate_results()
+        self.aggregate_runtimes()
 
     def run_experiments(self, clear=False):
         if clear:
