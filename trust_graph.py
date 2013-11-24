@@ -19,7 +19,7 @@ class TrustGraph(nx.DiGraph):
 
     AGENT_TYPE_PRIORS = ['uniform', 'normal', 'beta']
     EDGE_STRATEGIES = ['uniform', 'cluster']
-    EDGE_WEIGHT_STRATEGIES = ['sample', 'noisy', 'cluster']
+    EDGE_WEIGHT_STRATEGIES = ['sample', 'noisy', 'prior']
 
     def __init__(self, num_nodes, agent_type_prior, edge_strategy,
                      edges_per_node, edge_weight_strategy, num_weight_samples):
