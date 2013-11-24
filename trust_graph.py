@@ -140,6 +140,42 @@ class TrustGraph(nx.DiGraph):
         raise ValueError("Invalid edge strategy")
 
     @staticmethod
+    def _expected_edge_weight(agent_types, edge_weight_strategy,
+                              agent_type_prior, i, j):
+        theta_i, theta_j = agent_types[i], agent_types[j]
+        if edge_weight_strategy == 'sample':
+            return theta_j
+        elif edge_weight_strategy == 'noisy':
+            return (1 - theta_i) * 0.5 + theta_i * theta_j
+        elif edge_weight_strategy == 'prior':
+            return (1 - theta_i) * utils.expected_noisy_theta(
+                agent_type_prior, theta_i, theta_j) + theta_i * theta_j
+        raise ValueError("Invalid edge weight strategy")
+
+    @staticmethod
+    def _sampled_edge_weight(agent_types, edge_weight_strategy,
+                             agent_type_prior, num_samples, i, j):
+        theta_i, theta_j = agent_types[i], agent_types[j]
+        if edge_weight_strategy == 'sample':
+            return utils.binom(num_samples, theta_j) / float(num_samples)
+        elif edge_weight_strategy == 'noisy':
+            # First find number of "true" samples
+            true_samples = utils.binom(num_samples, theta_i)
+            # Then sample from Bern[theta_j] `true_samples` times and from
+            # Bern[0.5] (num_samples - true_samples) times.
+            return (utils.binom(true_samples, theta_j) +
+                    utils.binom(num_samples - true_samples, 0.5)) / \
+                    float(num_samples)
+        elif edge_weight_strategy == 'prior':
+            true_samples = utils.binom(num_samples, theta_i)
+            return (utils.binom(true_samples, theta_j) +
+                    sum(stats.bernoulli.rvs(utils.noisy_theta(
+                        agent_type_prior, theta_i, theta_j))
+                        for _ in xrange(num_samples - true_samples))) / \
+                    float(num_samples)
+        raise ValueError("Invalid edge weight strategy")
+
+    @staticmethod
     def initialize_edge_weights(agent_types, edges, edge_weight_strategy,
                                 agent_type_prior, num_samples):
         """
@@ -154,40 +190,14 @@ class TrustGraph(nx.DiGraph):
             of an edge. Otherwise the matrix entry contains the weight of that
             edge.
         """
-        # Helper method to calculate the expected edge_weight
-        # (for when num_samples is infinity)
-        def expected_edge_weight(i, j):
-            theta_i, theta_j = agent_types[i], agent_types[j]
-            if edge_weight_strategy == 'sample':
-                return theta_j
-            elif edge_weight_strategy == 'noisy':
-                return (1 - theta_i) * 0.5 + theta_i * theta_j
-            elif edge_weight_strategy == 'prior':
-                return (1 - theta_i) * utils.expected_noisy_theta(
-                    agent_type_prior, theta_i, theta_j) + theta_i * theta_j
-            raise ValueError("Invalid edge weight strategy")
+        def expected_weight(i, j):
+            return TrustGraph._expected_edge_weight(
+                agent_types, edge_weight_strategy, agent_type_prior, i, j)
 
-        # Helper method to sample the edge_weight
-        def sampled_edge_weight(i, j):
-            theta_i, theta_j = agent_types[i], agent_types[j]
-            if edge_weight_strategy == 'sample':
-                return utils.binom(num_samples, theta_j) / float(num_samples)
-            elif edge_weight_strategy == 'noisy':
-                # First find number of "true" samples
-                true_samples = utils.binom(num_samples, theta_i)
-                # Then sample from Bern[theta_j] `true_samples` times and from
-                # Bern[0.5] (num_samples - true_samples) times.
-                return (utils.binom(true_samples, theta_j) +
-                        utils.binom(num_samples - true_samples, 0.5)) / \
-                        float(num_samples)
-            elif edge_weight_strategy == 'prior':
-                true_samples = utils.binom(num_samples, theta_i)
-                return (utils.binom(true_samples, theta_j) +
-                    sum(stats.bernoulli.rvs(utils.noisy_theta(
-                            agent_type_prior, theta_i, theta_j))
-                        for _ in xrange(num_samples - true_samples))) / \
-                    float(num_samples)
-            raise ValueError("Invalid edge weight strategy")
+        def sampled_weight(i, j):
+            return TrustGraph._sampled_edge_weight(
+                agent_types, edge_weight_strategy, agent_type_prior,
+                num_samples, i, j)
 
         n = len(agent_types)
         weights = np.repeat(None, n * n).reshape(n, n)
@@ -195,9 +205,9 @@ class TrustGraph(nx.DiGraph):
         for i in xrange(n):
             for j in edges[i]:
                 if num_samples == INFINITY:
-                    weights[i][j] = expected_edge_weight(i, j)
+                    weights[i][j] = expected_weight(i, j)
                 else:
-                    weights[i][j] = sampled_edge_weight(i, j)
+                    weights[i][j] = sampled_weight(i, j)
         return weights
 
     @staticmethod
