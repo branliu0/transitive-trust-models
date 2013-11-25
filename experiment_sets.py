@@ -257,6 +257,7 @@ class ExperimentSet(object):
             plt.xlabel(self.plot_xlabel)
             plt.margins(0.1)
             plt.ylabel(corrname + ' correlation')
+            plt.ylim(0, 1)
             extra_artists.append(
                 plt.legend(loc='center left', bbox_to_anchor=(1, 0.5),
                            fancybox=True, shadow=True))
