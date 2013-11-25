@@ -99,8 +99,10 @@ class ExperimentSet(object):
         if not hasattr(self, 'failed_experiments'):
             self.failed_experiments = []
 
+        # dtype=object allows for mixed types (as opposed to coercing to float)
         vals = np.array([np.repeat(val, self.num_experiments)
-                         for val in self.ind_param_values]).flatten()
+                         for val in self.ind_param_values],
+                        dtype=object).flatten()
         args = [(self.experiment_params, self.ind_param_name, v) for v in vals]
 
         pool = multiprocessing.Pool(processes=4)

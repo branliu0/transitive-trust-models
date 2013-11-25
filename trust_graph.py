@@ -57,21 +57,21 @@ class TrustGraph(nx.DiGraph):
             raise ValueError(
                 "%s is an invalid edge weight strategy" % edge_weight_strategy)
 
-        self.num_nodes            = num_nodes
+        self.num_nodes            = int(num_nodes)
         self.agent_type_prior     = agent_type_prior
         self.edge_strategy        = edge_strategy
-        self.edges_per_node       = edges_per_node
+        self.edges_per_node       = int(edges_per_node)
         self.edge_weight_strategy = edge_weight_strategy
         self.num_weight_samples   = num_weight_samples
 
         # First generate our agent types, edges, and edge weights
         self.agent_types = TrustGraph.initialize_agent_types(
-            num_nodes, agent_type_prior)
+            self.num_nodes, self.agent_type_prior)
         edges = TrustGraph.initialize_edges(
-            self.agent_types, edge_strategy, edges_per_node)
+            self.agent_types, self.edge_strategy, self.edges_per_node)
         edge_weights = TrustGraph.initialize_edge_weights(
-            self.agent_types, edges, edge_weight_strategy,
-            agent_type_prior, num_weight_samples)
+            self.agent_types, edges, self.edge_weight_strategy,
+            self.agent_type_prior, self.num_weight_samples)
 
         # Now let's add them to the networkx graph
         for i, agent_type in enumerate(self.agent_types):
