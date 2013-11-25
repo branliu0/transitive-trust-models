@@ -32,8 +32,8 @@ def run_experiment(args):
     params[param_name] = val
 
     while True:
-        exp = Experiment(**params)
         try:
+            exp = Experiment(**params)
             exp.compute_informativeness()
             break
         except Exception, e:
