@@ -262,8 +262,9 @@ class ExperimentSet(object):
                            fancybox=True, shadow=True))
 
         fig = plt.gcf()
-        fig.set_figheight(n * fig.get_figheight())  # Prevent squish
-        fig.set_figwidth(1.4 * fig.get_figwidth())  # A bit more width is nice
+        # Sadly hard-coding this in for now...
+        fig.set_figheight(n * 4.00)
+        fig.set_figwidth(8.40)
         extra_artists.append(fig.suptitle(self.plot_title))  # Add plot title
 
         if filename and isinstance(filename, str):
