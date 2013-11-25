@@ -92,7 +92,10 @@ class ExperimentSet(object):
     # Functions related to computation
     ###################################
 
-    def run_parallel_experiments(self):
+    def run_parallel_experiments(self, num_processes=None):
+        if num_processes is None:
+            num_processes = 4
+
         # NOTE: Always re-runs all the experiments.
         self.experiments = defaultdict(list)
 
@@ -105,7 +108,7 @@ class ExperimentSet(object):
                         dtype=object).flatten()
         args = [(self.experiment_params, self.ind_param_name, v) for v in vals]
 
-        pool = multiprocessing.Pool(processes=4)
+        pool = multiprocessing.Pool(processes=num_processes)
         results = pool.map(run_experiment, args)
         pool.close()
         pool.join()

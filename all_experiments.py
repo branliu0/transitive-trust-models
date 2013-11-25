@@ -9,7 +9,7 @@ NUM_NODES = 50
 DEFAULT_EDGE_COUNT = 15
 DEFAULT_SAMPLE_COUNT = 30
 
-def run_all_experiments(num_experiments, folder_name):
+def run_all_experiments(num_experiments, folder_name, num_processes=None):
     folder = os.path.join(SAVE_FOLDER, folder_name)
     os.mkdir(folder)
 
@@ -23,7 +23,7 @@ def run_all_experiments(num_experiments, folder_name):
                     NUM_NODES, prior, edge_strat, weight_strat,
                     DEFAULT_SAMPLE_COUNT, "%s_%d" % (folder_name, count),
                     num_experiments)
-                eces.run_parallel_experiments()
+                eces.run_parallel_experiments(num_processes)
                 filename = ("edges_%d_%s_%s_%s_%dt_%de.png"
                             % (NUM_NODES, prior, edge_strat, weight_strat,
                                DEFAULT_SAMPLE_COUNT, num_experiments))
@@ -34,7 +34,7 @@ def run_all_experiments(num_experiments, folder_name):
                     NUM_NODES, prior, edge_strat, DEFAULT_EDGE_COUNT,
                     weight_strat, "%s_%d" % (folder_name, count),
                     num_experiments)
-                sces.run_parallel_experiments()
+                sces.run_parallel_experiments(num_processes)
                 filename = ("samples_%d-%d_%s_%s_%s_%de.png"
                             % (NUM_NODES, DEFAULT_EDGE_COUNT, prior,
                                edge_strat, weight_strat, num_experiments))
