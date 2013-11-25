@@ -4,6 +4,7 @@ import math
 import multiprocessing
 import os
 import time
+import traceback
 import sys
 
 import matplotlib.pyplot as plt
@@ -36,8 +37,8 @@ def run_experiment(args):
             exp = Experiment(**params)
             exp.compute_informativeness()
             break
-        except Exception, e:
-            print str(e)
+        except Exception:
+            traceback.print_exc()
 
     elapsed_time = time.clock() - start_time
     print "Experiment with val %s added in %0.2f seconds" % \
@@ -140,9 +141,9 @@ class ExperimentSet(object):
                         exp.compute_informativeness()
                         self.experiments[val].append(exp)
                         break
-                    except Exception, e:
+                    except Exception:
                         self.failed_experiments.append(exp)
-                        print str(e)
+                        traceback.print_exc()
 
                 elapsed_time = time.clock() - start_time
                 print "Experiment %d added in %0.2f seconds" % \
