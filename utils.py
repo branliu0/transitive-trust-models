@@ -130,3 +130,36 @@ def resample_unique(rv, existing_values=[]):
         sample = rv.rvs()
         if sample not in existing_values:
             return sample
+
+
+class RegenList(list):
+    """ Regenerating List, convenient for auto-regenerating values in bulk
+
+    This slight extension to Python's native list data structure makes it easy
+    to create pseudo-streams that continually provide values, but generate
+    them in bulk (for computational efficiency).
+    """
+
+    def __init__(self, gen_lambda, *args):
+        """
+        Args:
+            gen_lambda: A function that returns a list, which generates the
+                the values for this list.
+            args: Any functions to be passed to gen_lambda.
+        """
+        self.gen_lambda = gen_lambda
+        self.args = args
+        self.extend(gen_lambda(*self.args))
+
+    def pop(self, *args, **kwargs):
+        if not self:
+            self.regen(*self.args)
+        return super(RegenList, self).pop(*args, **kwargs)
+
+    def shift(self):
+        """ Sadly Python's list does not have a shift function. """
+        return self.pop(0)
+
+    def regen(self, *args):
+        self.extend(self.gen_lambda(*args))
+
