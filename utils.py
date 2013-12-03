@@ -147,6 +147,7 @@ class RegenList(list):
                 the values for this list.
             args: Any functions to be passed to gen_lambda.
         """
+        super(RegenList, self).__init__()
         self.gen_lambda = gen_lambda
         self.args = args
         self.extend(gen_lambda(*self.args))
@@ -163,3 +164,15 @@ class RegenList(list):
     def regen(self, *args):
         self.extend(self.gen_lambda(*args))
 
+
+class RandomRegenList(RegenList):
+
+    def __init__(self, N):
+        super(RandomRegenList, self).__init__(lambda: np.random.random(size=N))
+
+
+class CoinFlipRegenList(RegenList):
+
+    def __init__(self, N, p):
+        super(CoinFlipRegenList, self).__init__(
+            lambda: np.random.random(size=N) < p)
