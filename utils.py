@@ -176,3 +176,26 @@ class CoinFlipRegenList(RegenList):
     def __init__(self, N, p):
         super(CoinFlipRegenList, self).__init__(
             lambda: np.random.random(size=N) < p)
+
+
+class RandomWalk(object):
+
+    def __init__(self, graph, alpha):
+        N = graph.number_of_nodes()
+        self.terminator = CoinFlipRegenList(int(N * N / alpha), alpha)
+        self.steps = {}
+        for node in graph.nodes():
+            edges = graph.edges(node, data=True)
+            if edges:
+                rv = stats.rv_discrete(values=([x[1] for x in edges],
+                                    normalize([x[2]['weight'] for x in edges])))
+                self.steps[node] = RegenList(lambda: rv.rvs(size=int(N / alpha)))
+            else:
+                # What else can be done for dangling nodes?
+                self.steps[node] = RegenList(lambda: [None] * int(N / alpha))
+
+    def terminates(self):
+        return self.terminator.shift()
+
+    def step(self, node):
+        return self.steps[node].shift()
