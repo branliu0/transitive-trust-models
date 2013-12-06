@@ -70,3 +70,23 @@ def naive_psmc_hitting_time(graph, num_trials, alpha=0.15):
 
     hitting_time /= num_trials
     return hitting_time
+
+
+def complete_path_smc_hitting_time(graph, num_trials, alpha=0.15):
+    N = graph.number_of_nodes()
+    walk = RandomWalk(graph, alpha)
+    hitting_time = np.zeros((N, N))
+
+    for i in xrange(N):
+        for _ in xrange(N * num_trials):
+            node = i
+            hits = np.zeros(N)
+            while True:
+                hits[node] = 1
+                if walk.terminates():
+                    break
+                node = walk.step(node)
+            hitting_time[i] += hits
+
+    hitting_time /= N * num_trials
+    return hitting_time
