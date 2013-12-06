@@ -21,10 +21,14 @@ def naive_smc_hitting_time(graph, num_trials, alpha=0.15):
 
             for _ in xrange(num_trials):
                 node = i
-                while not walk.terminates():
+                while True:
                     if node == j:
                         hitting_time[i][j] += 1
                         break
+
+                    if walk.terminates():
+                        break
+
                     node = walk.step(node)
             hitting_time[i][j] /= num_trials
 
