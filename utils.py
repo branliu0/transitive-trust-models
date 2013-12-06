@@ -184,12 +184,15 @@ class RandomWalk(object):
         N = graph.number_of_nodes()
         self.terminator = CoinFlipRegenList(int(N * N / alpha), alpha)
         self.steps = {}
+        self.rvs = {}
         for node in graph.nodes():
             edges = graph.edges(node, data=True)
             if edges:
-                rv = stats.rv_discrete(values=([x[1] for x in edges],
-                                    normalize([x[2]['weight'] for x in edges])))
-                self.steps[node] = RegenList(lambda: rv.rvs(size=int(N / alpha)))
+                rv = stats.rv_discrete(
+                    values=([x[1] for x in edges],
+                            normalize([x[2]['weight'] for x in edges])))
+                self.steps[node] = RegenList(
+                    lambda rv: rv.rvs(size=int(N / alpha)), rv)
             else:
                 # What else can be done for dangling nodes?
                 self.steps[node] = RegenList(lambda: [None] * int(N / alpha))
