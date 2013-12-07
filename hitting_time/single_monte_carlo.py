@@ -1,3 +1,5 @@
+from collections import Counter
+
 import numpy as np
 
 from utils import RandomWalk
@@ -90,3 +92,32 @@ def complete_path_smc_hitting_time(graph, num_trials, alpha=0.15):
 
     hitting_time /= N * num_trials
     return hitting_time
+
+
+def generative_smc_hitting_time(graph, num_trials, alpha=0.15):
+    N = graph.number_of_nodes()
+    walk = RandomWalk(graph, alpha)
+    hits = np.zeros((N, N))
+    walks = np.zeros(N)
+
+    for i in xrange(N):
+        for _ in xrange(N * num_trials):
+            # First simulate the random walk
+            node = i
+            steps = []
+            while True:
+                steps.append(node)
+                node = walk.step(node)
+                if walk.terminates():
+                    break
+            # print ", ".join(map(str, steps))
+            # Extract the analysis from the walk afterward, all at once
+            counter = Counter(steps)
+            seen = set()
+            for n in reversed(steps):
+                if n in seen:
+                    continue
+                hits[n][counter.keys()] += counter.values()
+                walks[n] += counter[n]
+                counter[n] -= 1
+    return hits / walks
