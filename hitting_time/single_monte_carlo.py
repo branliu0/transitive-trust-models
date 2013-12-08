@@ -117,6 +117,7 @@ def generative_smc_hitting_time(graph, num_trials, alpha=0.15):
             for n in reversed(steps):
                 if n in seen:
                     continue
+                seen.add(n)
                 hits[n][counter.keys()] += counter.values()
                 walks[n] += counter[n]
                 counter[n] -= 1
