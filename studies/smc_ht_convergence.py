@@ -62,7 +62,7 @@ def plot_convergence(num_iterations, trials=None, filename=None):
     plt.suptitle('Convergence of Single-Threaded Monte Carlo Estimators for '
                  'Hitting Time')
     plt.xlabel('Number of random walks (\'000)')
-    plt.xticks(walks, map(str, walks / 1000.0))
+    plt.xticks(walks, map(str, walks / 1000))
     plt.ylabel("Average error from 'best' (%d trials)" % num_iterations)
 
     plt.legend(loc='best')
@@ -81,7 +81,7 @@ def plot_convergence(num_iterations, trials=None, filename=None):
     plt.suptitle('Runtimes of Single-Threaded Monte Carlo Estimators '
                  'for Hitting Time')
     plt.xlabel('Number of random walks (\'000)')
-    plt.xticks(walks, map(str, walks / 1000.0))
+    plt.xticks(walks, map(str, walks / 1000))
     plt.ylabel('Average runtime for one iteration (over %d trials)'
                % num_iterations)
     plt.legend(loc='best')
