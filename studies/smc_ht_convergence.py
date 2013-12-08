@@ -38,7 +38,7 @@ def plot_convergence(num_iterations, trials=None, filename=None):
             trial = []
             for j in xrange(num_iterations):
                 trial.append(func(graphs[i][j], t))
-                sys.stdout.write('.')
+                sys.stdout.write('.'); sys.stdout.flush()
             raws.append(trial)
         sys.stdout.write('\n')
 
