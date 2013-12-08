@@ -81,7 +81,7 @@ def plot_convergence(num_iterations, trials=None, filename=None):
                  'for Hitting Time')
     plt.xlabel('Number of random walks (\'000)')
     plt.xticks(walks, map(str, walks / 1000))
-    plt.ylabel('Average runtime for one iteration (over %d trials)'
+    plt.ylabel('Average runtime for one iteration (sec) (over %d trials)'
                % num_iterations)
     plt.legend(loc='best')
     plt.margins(0.07)
