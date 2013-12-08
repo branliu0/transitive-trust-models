@@ -3,7 +3,6 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import stats
 
 from hitting_time.eigen_hitting_time import personalized_eigen_ht
 from hitting_time.single_monte_carlo import complete_path_smc_hitting_time
