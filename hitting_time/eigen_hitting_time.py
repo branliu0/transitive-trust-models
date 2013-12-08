@@ -8,22 +8,22 @@ def personalized_eigen_ht(graph, alpha=0.15):
     N = graph.number_of_nodes()
     scores = np.zeros((N, N))
     restarts = np.eye(N)
+    old_edges = np.zeros(N)
+
+    # Initially handle dangling nodes and normalization.
+    adj_matrix = nx.to_numpy_matrix(graph)
+    for k in xrange(N):
+        s = adj_matrix[k].sum()
+        if s == 0:  # Dangling nodes
+            adj_matrix[k, k] = 1
+        else:  # Normalization
+            adj_matrix[k] /= s
+
     for i in xrange(N):
         for j in xrange(N):
-            adj_matrix = nx.to_numpy_matrix(graph)
-
             # Once you hit j, go straight back to i
+            old_edges = adj_matrix[j].copy()
             adj_matrix[j] = restarts[i]
-
-            # For dangling nodes, we add a self-edge, which simulates getting
-            # "stuck" until we teleport.
-            for k in xrange(N):
-                if adj_matrix[k].sum() == 0:
-                    adj_matrix[k, k] = 1
-
-            # Normalize outgoing edge weights for all nodes.
-            for k in xrange(N):
-                adj_matrix[k] /= adj_matrix[k].sum()
 
             # Now add in the restart distribution to the matrix.
             htpr_matrix = (1 - alpha) * adj_matrix + \
@@ -42,4 +42,7 @@ def personalized_eigen_ht(graph, alpha=0.15):
             # away from node i will always be to a node in the pretrusted set,
             # we arrive at this equation for deriving hitting time.
             scores[i][j] = (1.0 / (1 - alpha + alpha / pagerank[j]))
+
+            # And return the adj_matrix to its original state
+            adj_matrix[j] = old_edges
     return scores
