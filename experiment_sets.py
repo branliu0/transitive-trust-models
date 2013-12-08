@@ -27,13 +27,13 @@ def run_experiment(args):
     # args is a tuple, so that we can map over an array of tuples.
     # see run_parallel_experiments()
     params, param_name, val = args
-    start_time = time.clock()
 
     params = params.copy()
     params[param_name] = val
 
     while True:
         try:
+            start_time = time.clock()
             exp = Experiment(**params)
             exp.compute_informativeness()
             break
