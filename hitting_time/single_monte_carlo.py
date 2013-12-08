@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, defaultdict
 
 import numpy as np
 
@@ -105,19 +105,19 @@ def generative_smc_hitting_time(graph, num_trials, alpha=0.15):
             # First simulate the random walk
             node = i
             steps = []
+            counter = defaultdict(int)
             while True:
                 steps.append(node)
+                counter[node] += 1
                 node = walk.step(node)
                 if walk.terminates():
                     break
-            # print ", ".join(map(str, steps))
             # Extract the analysis from the walk afterward, all at once
-            counter = Counter(steps)
-            seen = set()
+            seen = np.repeat(False, N)
             for n in reversed(steps):
-                if n in seen:
+                if seen[n]:
                     continue
-                seen.add(n)
+                seen[n] = True
                 hits[counter.keys(), n] += counter.values()
                 walks[n] += counter[n]
                 counter[n] -= 1
