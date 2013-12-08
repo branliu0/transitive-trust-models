@@ -17,7 +17,6 @@ def plot_convergence(num_iterations, trials=None, filename=None):
     if not trials:
         trials = [1, 2, 3, 5]
     walks = np.array(trials) * NUM_NODES * NUM_NODES
-    log_walks = np.log10(walks)
 
     graphs = [[utils.random_weighted_graph(NUM_NODES, EDGE_PROB)
                for _ in xrange(num_iterations)]
@@ -52,13 +51,13 @@ def plot_convergence(num_iterations, trials=None, filename=None):
             errs.append(1.96 * stats.sem(diffs))
 
         # Plot the results
-        plt.plot(log_walks, means, 's-', label=name)
+        plt.plot(walks, means, 's-', label=name)
 
     # Additional plotting parameters
     plt.suptitle('Convergence of Single-Threaded Monte Carlo Estimators of '
                  'Hitting Time')
-    plt.xlabel('Number of random walks')
-    plt.xticks(log_walks, map(str, walks))
+    plt.xlabel('Number of random walks (\'000)')
+    plt.xticks(walks, map(str, walks / 1000))
     plt.ylabel('Average error (%d trials)' % num_iterations)
 
     plt.legend(loc='best')
