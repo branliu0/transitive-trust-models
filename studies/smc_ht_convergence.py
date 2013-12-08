@@ -47,6 +47,7 @@ def plot_convergence(num_iterations, trials=None, filename=None):
         errs = []
         for trial in raws:
             diffs = np.sum(np.absolute(trial - best), axis=(1, 2))
+            diffs /= NUM_NODES * NUM_NODES  # avg error per node
             means.append(np.mean(diffs))
             errs.append(1.96 * stats.sem(diffs))
 
@@ -58,7 +59,7 @@ def plot_convergence(num_iterations, trials=None, filename=None):
                  'Hitting Time')
     plt.xlabel('Number of random walks (\'000)')
     plt.xticks(walks, map(str, walks / 1000))
-    plt.ylabel('Average error (%d trials)' % num_iterations)
+    plt.ylabel("Average error from 'best' (%d trials)" % num_iterations)
 
     plt.legend(loc='best')
     plt.margins(0.07)
