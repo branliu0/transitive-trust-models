@@ -123,7 +123,8 @@ def convergence_by_nodes(num_iterations, nodes=None, num_walks=25000, filename=N
 
         plt.plot(nodes, means[ii], 's-', label=name)
 
-    plt.suptitle('Error of Monte Carlo Estimators by Graph Size')
+    plt.suptitle('Error of Monte Carlo Estimators by Graph Size (%d walks)'
+                 % num_walks)
     plt.xlabel('Number of nodes')
     plt.xticks(nodes, nodes)
     plt.ylabel("Average error from 'best' (%d trials)" % num_iterations)
@@ -140,7 +141,8 @@ def convergence_by_nodes(num_iterations, nodes=None, num_walks=25000, filename=N
     avg_times = np.mean(times, axis=2)
     for ii, (name, _) in enumerate(METHODS):
         plt.plot(nodes, avg_times[ii], 's-', label=name)
-    plt.suptitle('Running Times of Monte Carlo Estimators by Graph Size')
+    plt.suptitle('Running Times of Monte Carlo Estimators by Graph Size '
+                 '(%d walks)' % num_walks)
     plt.xlabel('Number of nodes')
     plt.xticks(nodes, nodes)
     plt.ylabel('Average runtime for one iteration (sec) (over %d trials)'
