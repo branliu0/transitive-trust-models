@@ -1,4 +1,6 @@
 import math
+
+import networkx as nx
 import numpy as np
 from scipy import stats
 
@@ -130,6 +132,15 @@ def resample_unique(rv, existing_values=[]):
         sample = rv.rvs()
         if sample not in existing_values:
             return sample
+
+
+def random_weighted_graph(num_nodes, edge_prob, weight_dist='uniform'):
+    """ Returns a Erdos-Renyi graph with edge weights. """
+    g = nx.gnp_random_graph(num_nodes, edge_prob, directed=True)
+    weights = agent_type_rv(weight_dist).rvs(size=g.number_of_edges())
+    for i, e in enumerate(g.edges_iter()):
+        g[e[0]][e[1]]['weight'] = weights[i]
+    return g
 
 
 class RegenList(list):
