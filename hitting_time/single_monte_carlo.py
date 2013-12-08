@@ -118,7 +118,7 @@ def generative_smc_hitting_time(graph, num_trials, alpha=0.15):
                 if n in seen:
                     continue
                 seen.add(n)
-                hits[n][counter.keys()] += counter.values()
+                hits[counter.keys(), n] += counter.values()
                 walks[n] += counter[n]
                 counter[n] -= 1
-    return hits / walks
+    return hits / np.outer(walks, np.ones(N))
