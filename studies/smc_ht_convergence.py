@@ -1,4 +1,5 @@
 import sys
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -35,33 +36,33 @@ def plot_convergence(num_iterations, trials=None, filename=None):
     ]
 
     # Run the simulations
-    for name, func in methods:
+    means = np.zeros((len(methods), len(trials)))
+    times = np.zeros((len(methods), len(trials), num_iterations))
+    for ii, (name, func) in enumerate(methods):
         print name
         raws = np.zeros((len(trials), num_iterations, NUM_NODES, NUM_NODES))
         for i, t in enumerate(trials):
             for j in xrange(num_iterations):
+                start_time = time.clock()
                 raws[i][j] = func(graphs[i][j], t)
+                times[ii][i][j] = time.clock() - start_time
                 sys.stdout.write('.'); sys.stdout.flush()
         sys.stdout.write('\n')
 
         # Compute errors
-        best = np.mean(raws[-1], axis=0)
-        means = []
-        errs = []
-        for trial, best in zip(raws, best_estimates):
+        for i, (trial, best) in enumerate(zip(raws, best_estimates)):
             diffs = np.sum(np.absolute(trial - best), axis=(1, 2))
             diffs /= NUM_NODES * NUM_NODES  # avg error per node
-            means.append(np.mean(diffs))
-            errs.append(1.96 * stats.sem(diffs))
+            means[ii][i] = np.mean(diffs)
 
         # Plot the results
-        plt.plot(walks, means, 's-', label=name)
+        plt.plot(walks, means[ii], 's-', label=name)
 
     # Additional plotting parameters
-    plt.suptitle('Convergence of Single-Threaded Monte Carlo Estimators of '
+    plt.suptitle('Convergence of Single-Threaded Monte Carlo Estimators for '
                  'Hitting Time')
     plt.xlabel('Number of random walks (\'000)')
-    plt.xticks(walks, map(str, walks / 1000))
+    plt.xticks(walks, map(str, walks / 1000.0))
     plt.ylabel("Average error from 'best' (%d trials)" % num_iterations)
 
     plt.legend(loc='best')
@@ -73,3 +74,23 @@ def plot_convergence(num_iterations, trials=None, filename=None):
     else:
         plt.show()
 
+    # Plot runtimes
+    avg_times = np.mean(times, axis=2)
+    for ii, (name, _) in enumerate(methods):
+        plt.plot(walks, avg_times[ii], 's-', label=name)
+    plt.suptitle('Runtimes of Single-Threaded Monte Carlo Estimators '
+                 'for Hitting Time')
+    plt.xlabel('Number of random walks (\'000)')
+    plt.xticks(walks, map(str, walks / 1000.0))
+    plt.ylabel('Average runtime for one iteration (over %d trials)'
+               % num_iterations)
+    plt.legend(loc='best')
+    plt.margins(0.07)
+
+    if filename:
+        plt.savefig('time_' + filename, bbox_inches='tight')
+        plt.clf()
+    else:
+        plt.show()
+
+    return means, avg_times
