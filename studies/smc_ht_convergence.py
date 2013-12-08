@@ -13,7 +13,7 @@ NUM_NODES = 50
 EDGE_PROB = 0.5
 
 
-def plot_convergence(num_iterations, trials=None):
+def plot_convergence(num_iterations, trials=None, filename=None):
     if not trials:
         trials = [1, 2, 3, 5]
     walks = np.array(trials) * NUM_NODES * NUM_NODES
@@ -63,5 +63,10 @@ def plot_convergence(num_iterations, trials=None):
 
     plt.legend(loc='best')
     plt.margins(0.07)
-    plt.show()
+
+    if filename:
+        plt.savefig(filename, bbox_inches='tight')
+        plt.clf()
+    else:
+        plt.show()
 
