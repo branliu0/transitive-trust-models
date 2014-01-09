@@ -21,8 +21,8 @@ def run_all_experiments(num_experiments, folder_name, num_processes=None):
                 # Edge Count Experiment Sets
                 eces = EdgeCountExperimentSet(
                     NUM_NODES, prior, edge_strat, weight_strat,
-                    DEFAULT_SAMPLE_COUNT, "%s_%d" % (folder_name, count),
-                    num_experiments)
+                    DEFAULT_SAMPLE_COUNT, num_experiments,
+                    "%s_%d" % (folder_name, count))
                 eces.run_parallel_experiments(num_processes)
                 filename = ("edges_%d_%s_%s_%s_%dt_%de.png"
                             % (NUM_NODES, prior, edge_strat, weight_strat,
@@ -32,8 +32,8 @@ def run_all_experiments(num_experiments, folder_name, num_processes=None):
                 # Sample Count Experiment Sets
                 sces = SampleCountExperimentSet(
                     NUM_NODES, prior, edge_strat, DEFAULT_EDGE_COUNT,
-                    weight_strat, "%s_%d" % (folder_name, count),
-                    num_experiments)
+                    weight_strat, num_experiments,
+                    "%s_%d" % (folder_name, count))
                 sces.run_parallel_experiments(num_processes)
                 filename = ("samples_%d-%d_%s_%s_%s_%de.png"
                             % (NUM_NODES, DEFAULT_EDGE_COUNT, prior,

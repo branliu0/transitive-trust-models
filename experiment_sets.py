@@ -65,11 +65,15 @@ class ExperimentSet(object):
     __metaclass__ = ABCMeta
 
     def __init__(self, experiment_params, ind_param_name, ind_param_values,
-                 prefix, num_experiments):
+                 num_experiments, prefix=None):
         required_fields = ['name', 'plot_title', 'plot_xlabel']
         for f in required_fields:
             if not getattr(self, f):
                 raise ValueError("self.%s must be defined" % f)
+
+        if prefix is None:
+            prefix = self.generate_prefix()
+            print 'Auto-generated prefix: %s' % prefix
 
         self.experiment_params = experiment_params
         self.ind_param_name    = ind_param_name
@@ -306,8 +310,8 @@ edge_strategy        = {edge_strategy}
 edges_per_node       = {edges_per_node}
 edge_weight_strategy = {edge_weight_strategy}
 num_weight_samples   = {num_weight_samples}
-prefix               = {prefix}
-num_experiments      = {num_experiments}""".format(**self.__dict__)
+num_experiments      = {num_experiments}
+prefix               = {prefix}""".format(**self.__dict__)
 
     ##########################################################
     # Functions related to saving and loading from YAML files
@@ -400,6 +404,18 @@ num_experiments      = {num_experiments}""".format(**self.__dict__)
         with open(filename, 'r') as f:
             return yaml.load(f.read())
 
+    def generate_prefix(self):
+        import datetime
+        today = datetime.date.today()
+        prefix = '%d-%d-%d_%s_' % (today.year, today.month, today.day,
+                                   self.name)
+        num = 1
+        while os.path.exists(os.path.join(SAVE_FOLDER, prefix + '%02d' % num)):
+            num += 1
+
+        return prefix + '%02d' % num
+
+
 class EdgeCountExperimentSet(ExperimentSet):
     name = 'edge_count'
     plot_xlabel = 'Edges per node'
@@ -408,7 +424,7 @@ class EdgeCountExperimentSet(ExperimentSet):
 
     def __init__(self, num_nodes, agent_type_prior, edge_strategy,
                  edge_weight_strategy, num_weight_samples,
-                 prefix, num_experiments, edge_counts=None):
+                 num_experiments, prefix, edge_counts=None):
         """
         Args:
             num_nodes: Number of nodes in this graph.
@@ -425,8 +441,8 @@ class EdgeCountExperimentSet(ExperimentSet):
                 'prior': Low types more likely to sampel from prior distribution
             num_weight_samples: Number of times to sample for determining
                 edge weights.
-            prefix: Prefix used for saving
             num_experiments: Number of experiments to run per parameter set
+            prefix: Prefix used for saving
             edge_counts: An array of edge counts to vary over
         """
         if not edge_counts:
@@ -447,7 +463,7 @@ class EdgeCountExperimentSet(ExperimentSet):
                num_weight_samples, num_experiments))
 
         super(EdgeCountExperimentSet, self).__init__(
-            params, 'edges_per_node', edge_counts, prefix, num_experiments)
+            params, 'edges_per_node', edge_counts, num_experiments, prefix)
 
 
 class SampleCountExperimentSet(ExperimentSet):
@@ -457,8 +473,8 @@ class SampleCountExperimentSet(ExperimentSet):
     DEFAULT_SAMPLE_COUNTS = [1, 2, 4, 8, 16, 32, 64, 128, INFINITY]
 
     def __init__(self, num_nodes, agent_type_prior, edge_strategy,
-                 edges_per_node, edge_weight_strategy, prefix,
-                 num_experiments, sample_counts=None):
+                 edges_per_node, edge_weight_strategy, num_experiments,
+                 prefix, sample_counts=None):
         """
         Args:
             num_nodes: Number of nodes in this graph.
@@ -474,8 +490,8 @@ class SampleCountExperimentSet(ExperimentSet):
                 'sample': Sample from true agent type
                 'noisy': Low types more likely to sample from Bernoulli[0.5]
                 'prior': Low types more likely to sampel from prior distribution
-            prefix: Prefix used for saving
             num_experiments: Number of experiments to run per parameter set
+            prefix: Prefix used for saving
             sample_counts: An array of sample counts to vary over
         """
         if not sample_counts:
@@ -496,7 +512,7 @@ class SampleCountExperimentSet(ExperimentSet):
                edge_weight_strategy, num_experiments))
 
         super(SampleCountExperimentSet, self).__init__(
-            params, 'num_weight_samples', sample_counts, prefix, num_experiments)
+            params, 'num_weight_samples', sample_counts, num_experiments, prefix)
 
     def transform_x(self, xs):
         """ Use a log-2 scale and handle values of infinity. """
