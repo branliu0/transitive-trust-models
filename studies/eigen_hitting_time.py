@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 
-from trust_models import TrustModels
+import trust_models as tm
 
 MC_ITERS = int(1e5)
 NUM_NODES = 5
@@ -21,10 +21,8 @@ def compare_hitting_times(num_graphs):
         for e in g.edges_iter():
             g[e[0]][e[1]]['weight'] = random.random()
 
-        m = TrustModels(g)
-
-        mc_ht.append(m.hitting_time('all', num_iters=MC_ITERS))
-        eigen_ht.append(m.hitting_pagerank('all'))
+        mc_ht.append(tm.hitting_time(g, 'all', num_iters=MC_ITERS))
+        eigen_ht.append(tm.hitting_pagerank(g, 'all'))
 
     mc_ht = np.transpose(mc_ht)
     eigen_ht = np.transpose(eigen_ht)

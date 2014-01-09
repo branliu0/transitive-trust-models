@@ -7,7 +7,7 @@ import numpy as np
 from scipy import stats
 
 from trust_graph import TrustGraph
-from trust_models import TrustModels
+import trust_models as tm
 
 NUM_NODES = 50
 NUM_EDGES = 20
@@ -46,10 +46,8 @@ def pagerank_vs_hitting_time(num_graphs):
         for e in g.edges_iter():
             g[e[0]][e[1]]['weight'] = random.random()
 
-        m = TrustModels(g)
-
-        prs.append(m.pagerank())
-        hts.append(m.hitting_pagerank('all'))
+        prs.append(tm.pagerank(g))
+        hts.append(tm.hitting_pagerank(g, 'all'))
         corrs.append(stats.spearmanr(prs[i], hts[i])[0])
 
         sys.stdout.write('.')

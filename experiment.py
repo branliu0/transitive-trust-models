@@ -5,7 +5,7 @@ import numpy as np
 from scipy import stats
 
 from trust_graph import TrustGraph
-from trust_models import TrustModels
+import trust_models as tm
 
 
 class Experiment(object):
@@ -69,17 +69,17 @@ class Experiment(object):
     # Format:
     # 1. True if a global TTM; False if a personalized TTM
     # 2. The name for the TTM; used as the key in the dict
-    # 3. The name of the function on the TrustModel class
+    # 3. The trust model function
     # 4. (list) args to be passed to the ttm function
     # 5. (dict) kwargs to be passed to the ttm function
     TTM_PARAMS = [
-        (True, 'pagerank', 'pagerank', [], {}),
-        (True, 'hitting_time_all', 'hitting_pagerank', ['all'], {}),
-        (True, 'hitting_time_top', 'hitting_pagerank', ['top'], {}),
-        # (True, 'hitting_time_all', 'hitting_time', ['all'], {}),
-        # (True, 'hitting_time_top', 'hitting_time', ['top'], {}),
-        (False, 'max_flow', 'max_flow', [], {}),
-        (False, 'shortest_path', 'shortest_path', [], {})
+        (True, 'pagerank', tm.pagerank, [], {}),
+        (True, 'hitting_time_all', tm.hitting_pagerank, ['all'], {}),
+        (True, 'hitting_time_top', tm.hitting_pagerank, ['top'], {}),
+        # (True, 'hitting_time_all', tm.hitting_time, ['all'], {}),
+        # (True, 'hitting_time_top', tm.hitting_time, ['top'], {}),
+        (False, 'max_flow', tm.max_flow, [], {}),
+        (False, 'shortest_path', tm.shortest_path, [], {})
     ]
 
     MODEL_NAMES = [x[1] for x in TTM_PARAMS]
@@ -100,7 +100,6 @@ class Experiment(object):
         self.graph = TrustGraph(
             num_nodes, agent_type_prior, edge_strategy,
             edges_per_node, edge_weight_strategy, num_weight_samples)
-        self.trust_models = TrustModels(self.graph)
 
         self.global_ttms = defaultdict(dict)
         self.personalized_ttms = defaultdict(dict)
@@ -115,10 +114,10 @@ class Experiment(object):
     def compute_scores(self):
         """ Actually run the trust model routines. Can take a while. """
 
-        for is_global, name, model_method, args, kwargs in self.TTM_PARAMS:
+        for is_global, name, tm_function, args, kwargs in self.TTM_PARAMS:
             # First calculate the runtime of the method
             start_time = time.clock()
-            score = getattr(self.trust_models, model_method)(*args, **kwargs)
+            score = tm_function(self.graph, *args, **kwargs)
             runtime = time.clock() - start_time
 
             # Then actually store it.

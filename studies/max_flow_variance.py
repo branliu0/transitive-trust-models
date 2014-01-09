@@ -8,7 +8,7 @@ from scipy import stats
 
 from experiment_sets import EdgeCountExperimentSet
 from trust_graph import TrustGraph
-from trust_models import TrustModels
+import trust_models as tm
 
 NUM_NODES = 50
 
@@ -24,8 +24,7 @@ def max_flow_variance(num_iters=5, edge_counts=None):
         for j in xrange(num_iters):
             g = TrustGraph(NUM_NODES, 'uniform', 'uniform', count, 'noisy', 30)
             at = g.agent_types
-            m = TrustModels(g)
-            scores = m.max_flow()
+            scores = tm.max_flow(g)
             raw_scores[i, j] = scores
             corrs = [stats.spearmanr(at, score)[0] for score in scores]
             means[i, j] = np.mean(corrs)
