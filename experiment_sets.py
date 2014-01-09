@@ -65,7 +65,7 @@ class ExperimentSet(object):
     __metaclass__ = ABCMeta
 
     def __init__(self, experiment_params, ind_param_name, ind_param_values,
-                 num_experiments, prefix=None):
+                 num_experiments, prefix=None, force=False):
         required_fields = ['name', 'plot_title', 'plot_xlabel']
         for f in required_fields:
             if not getattr(self, f):
@@ -85,7 +85,10 @@ class ExperimentSet(object):
         setattr(self, ind_param_name, ind_param_values)
 
         if os.path.exists(self._filename()):
-            raise ValueError("Experiment Set with this prefix already exists")
+            if force:
+                self._clean()
+            else:
+                raise ValueError("Experiment Set with this prefix already exists")
 
         # Save attributes now, for when we want to recreate later.
         self._save(self)
@@ -317,6 +320,8 @@ prefix               = {prefix}""".format(**self.__dict__)
     # Functions related to saving and loading from YAML files
     ##########################################################
 
+    PROPERTY_NAMES = ['results', 'errors', 'runtimes']
+
     @classmethod
     def load_from_file(cls, prefix, load_experiments=False):
         """ Retrive and load an experiment set from YAML files. """
@@ -334,7 +339,7 @@ prefix               = {prefix}""".format(**self.__dict__)
         if load_experiments:
             exp_set.load_experiments()
 
-        for prop in ["results", "errors", "runtimes"]:
+        for prop in self.PROPERTY_NAMES:
             if os.path.exists(exp_set._filename(prop)):
                 setattr(exp_set, prop, exp_set._load(prop))
 
@@ -404,6 +409,13 @@ prefix               = {prefix}""".format(**self.__dict__)
         with open(filename, 'r') as f:
             return yaml.load(f.read())
 
+    def _clean(self):
+        """ Deletes all files associated with this ExperimentSet. """
+        for prop in [""] + self.PROPERTY_NAMES:
+            filename = self._filename(prop)
+            if os.path.exists(filename):
+                os.remove(filename)
+
     def generate_prefix(self):
         import datetime
         today = datetime.date.today()
@@ -424,7 +436,7 @@ class EdgeCountExperimentSet(ExperimentSet):
 
     def __init__(self, num_nodes, agent_type_prior, edge_strategy,
                  edge_weight_strategy, num_weight_samples,
-                 num_experiments, prefix, edge_counts=None):
+                 num_experiments, prefix, edge_counts=None, **kwargs):
         """
         Args:
             num_nodes: Number of nodes in this graph.
@@ -463,7 +475,8 @@ class EdgeCountExperimentSet(ExperimentSet):
                num_weight_samples, num_experiments))
 
         super(EdgeCountExperimentSet, self).__init__(
-            params, 'edges_per_node', edge_counts, num_experiments, prefix)
+            params, 'edges_per_node', edge_counts, num_experiments, prefix,
+            **kwargs)
 
 
 class SampleCountExperimentSet(ExperimentSet):
@@ -474,7 +487,7 @@ class SampleCountExperimentSet(ExperimentSet):
 
     def __init__(self, num_nodes, agent_type_prior, edge_strategy,
                  edges_per_node, edge_weight_strategy, num_experiments,
-                 prefix, sample_counts=None):
+                 prefix, sample_counts=None, **kwargs):
         """
         Args:
             num_nodes: Number of nodes in this graph.
@@ -512,7 +525,8 @@ class SampleCountExperimentSet(ExperimentSet):
                edge_weight_strategy, num_experiments))
 
         super(SampleCountExperimentSet, self).__init__(
-            params, 'num_weight_samples', sample_counts, num_experiments, prefix)
+            params, 'num_weight_samples', sample_counts, num_experiments,
+            prefix, **kwargs)
 
     def transform_x(self, xs):
         """ Use a log-2 scale and handle values of infinity. """
