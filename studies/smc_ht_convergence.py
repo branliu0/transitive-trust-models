@@ -4,7 +4,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
-from hitting_time.eigen_hitting_time import personalized_eigen_ht
+from hitting_time.mat_hitting_time import personalized_eigen_ht
 from hitting_time.single_monte_carlo import complete_path_smc_hitting_time
 from hitting_time.single_monte_carlo import generative_smc_hitting_time
 from hitting_time.single_monte_carlo import naive_smc_hitting_time
