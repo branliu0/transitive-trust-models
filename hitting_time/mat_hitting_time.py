@@ -3,7 +3,7 @@ import numpy as np
 
 def personalized_eigen_ht(graph, alpha=0.15):
     """
-    Makes N^2 eigenvector calculations.
+    Makes N^2 eigenvector calculations. Expected O(N^5).
     """
     N = graph.number_of_nodes()
     scores = np.zeros((N, N))
@@ -46,3 +46,32 @@ def personalized_eigen_ht(graph, alpha=0.15):
             # And return the adj_matrix to its original state
             adj_matrix[j] = old_edges
     return scores
+
+
+def personalized_LA_ht(graph, alpha=0.15):
+    """ Computes personalized hitting time using a linear equation method.
+
+    This is expected O(N^4).
+
+    This is based on the formula
+
+        (I - (1 - alpha) * M(j)) * h(j) = (1 - alpha) * 1
+
+    which allows us to solve for the h_{ij} for one particular j by solving a
+    system of linear equations with N variables and N equations. We repeat this
+    N times to obtain all N^2 personalized hitting times.
+
+    Returns:
+        An NxN numpy matrix containing the personalized hitting times.
+    """
+    N = graph.number_of_nodes()
+    ht = np.zeros((N, N))
+    for i in xrange(N):
+        M = nx.to_numpy_matrix(graph)
+        for j in xrange(N):
+            M[j] /= M[j].sum()
+        M[i] = 0
+        A = np.eye(N) - (1 - alpha) * M  # The coefficients of the equations
+        b = np.repeat(1 - alpha, N)  # The constants of the equations
+        ht[:, i] = np.linalg.solve(A, b)  # The solved unknowns
+    return ht
