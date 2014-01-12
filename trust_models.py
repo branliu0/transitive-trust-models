@@ -38,6 +38,24 @@ def pagerank(graph, weighted=True):
         return nx.pagerank_numpy(graph, weight=None).values()
 
 
+def personalized_pagerank(graph, weighted=True):
+    """ Personalized PageRank algorithm with beta=0.85.
+
+    Returns:
+        An NxN numpy array.
+    """
+    N = graph.number_of_nodes()
+    weight = 'weight' if weighted else None
+    pagerank = np.zeros((N, N))
+    personalization = {n: 0 for n in graph.nodes()}
+    for i in xrange(N):
+        personalization[i] = 1
+        pagerank[i] = nx.pagerank_numpy(graph, personalization=personalization,
+                                        weight=weight).values()
+        personalization[i] = 0
+    return pagerank
+
+
 def _hitting_time_pretrusted_set(graph, pretrust_strategy):
     """ Pre-trusted set of nodes for Hitting Time, given a strategy.
 
