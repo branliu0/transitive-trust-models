@@ -339,7 +339,7 @@ prefix               = {prefix}""".format(**self.__dict__)
         if load_experiments:
             exp_set.load_experiments()
 
-        for prop in self.PROPERTY_NAMES:
+        for prop in ExperimentSet.PROPERTY_NAMES:
             if os.path.exists(exp_set._filename(prop)):
                 setattr(exp_set, prop, exp_set._load(prop))
 
