@@ -74,4 +74,4 @@ def personalized_LA_ht(graph, alpha=0.15):
         A = np.eye(N) - (1 - alpha) * M  # The coefficients of the equations
         b = np.repeat(1 - alpha, N)  # The constants of the equations
         ht[:, i] = np.linalg.solve(A, b)  # The solved unknowns
-    return ht
+    return -ht  # We negate to reverse the ordering
