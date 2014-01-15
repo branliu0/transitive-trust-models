@@ -280,19 +280,17 @@ def max_flow(graph):
         where 0 flow can be pushed.
     """
     num_nodes = graph.number_of_nodes()
-    max_flow_scores = []
+    scores = np.zeros((num_nodes, num_nodes))
     for i in xrange(num_nodes):
-        neighbor_scores = []
         for j in xrange(num_nodes):
             if i == j:
-                neighbor_scores.append(None)
+                scores[i][j] = None
             else:
                 mf = nx.max_flow(graph, i, j, capacity='weight')
-                neighbor_scores.append(None if mf == 0 else mf)
-        max_flow_scores.append(neighbor_scores)
+                scores[i][j] = None if mf == 0 else mf
         sys.stdout.write('.')
     sys.stdout.write("\n")
-    return max_flow_scores
+    return scores
 
 def shortest_path(graph):
     """ All-pairs shortest path on the graph of inverse weights.
@@ -311,13 +309,11 @@ def shortest_path(graph):
     nx_dict = nx.all_pairs_dijkstra_path_length(
         graph, weight='inv_weight')
     # Convert from dict format to array format
-    shortest_paths = []
+    shortest_paths = np.zeros((num_nodes, num_nodes))
     for i, d in nx_dict.iteritems():
-        neighbors = []
         for j in xrange(num_nodes):
             try:
-                neighbors.append(1.0 / d[j])
+                shortest_paths[i][j] = 1.0 / d[j]
             except (KeyError, ZeroDivisionError):
-                neighbors.append(None)
-        shortest_paths.append(neighbors)
+                shortest_paths[i][j] = None
     return shortest_paths
