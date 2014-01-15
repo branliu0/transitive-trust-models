@@ -48,6 +48,17 @@ def personalized_eigen_ht(graph, alpha=0.15):
     return scores
 
 
+def single_LA_ht(graph, j, alpha=0.15):
+    N = graph.number_of_nodes()
+    M = nx.to_numpy_matrix(graph)
+    for i in xrange(N):  # Normalize
+        M[i] /= M[i].sum()
+    M[j] = 0  # Remove outedges of j
+    A = np.eye(N) - (1 - alpha) * M
+    b = np.repeat(1 - alpha, N)
+    return np.linalg.solve(A, b)
+
+
 def personalized_LA_ht(graph, alpha=0.15):
     """ Computes personalized hitting time using a linear equation method.
 
@@ -66,12 +77,6 @@ def personalized_LA_ht(graph, alpha=0.15):
     """
     N = graph.number_of_nodes()
     ht = np.zeros((N, N))
-    for i in xrange(N):
-        M = nx.to_numpy_matrix(graph)
-        for j in xrange(N):
-            M[j] /= M[j].sum()
-        M[i] = 0
-        A = np.eye(N) - (1 - alpha) * M  # The coefficients of the equations
-        b = np.repeat(1 - alpha, N)  # The constants of the equations
-        ht[:, i] = np.linalg.solve(A, b)  # The solved unknowns
+    for j in xrange(N):
+        ht[:, j] = single_LA_ht(graph, j, alpha)
     return -ht  # We negate to reverse the ordering
