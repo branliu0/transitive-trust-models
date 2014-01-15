@@ -71,7 +71,7 @@ def person_pagerank(graph, num_strategic, sybil_pct):
 
     # We manually loop through personalize PageRank ourselves so that we can
     # avoid computing it for sybils.
-    N = graph.number_of_nodes
+    N = graph.number_of_nodes()
     scores = np.zeros((origN, N))
     personalization = {n: 0 for n in graph.nodes()}
     for i in xrange(origN):  # No need to compute for sybils
