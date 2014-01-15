@@ -28,7 +28,9 @@ def generate_sybils(graph, agents, num_sybils):
         sybil_counter += num_sybils
 
 
-def add_thin_edges(graph, edge_weight=1e-5):
+THIN_EDGE_WEIGHT=1e-5
+
+def add_thin_edges(graph, edge_weight=THIN_EDGE_WEIGHT):
     edges = graph.edges()
     for i in graph.nodes_iter():
         for j in graph.nodes_iter():
@@ -60,12 +62,25 @@ def person_pagerank(graph, num_strategic, sybil_pct):
     Cut all outlinks + generate one sybil.
     """
     graph = graph.copy()
-    N = graph.number_of_nodes()
+    origN = graph.number_of_nodes()
+
     strategic_agents = random.sample(graph.nodes(), num_strategic)
     cut_outlinks(graph, strategic_agents)
+    add_thin_edges(graph)  # do this BEFORE sybils!!
     generate_sybils(graph, strategic_agents, 1)
-    add_thin_edges(graph)
-    return tm.personalized_pagerank(graph)[:N, :N]
+
+    # We manually loop through personalize PageRank ourselves so that we can
+    # avoid computing it for sybils.
+    N = graph.number_of_nodes
+    scores = np.zeros((origN, N))
+    personalization = {n: 0 for n in graph.nodes()}
+    for i in xrange(origN):  # No need to compute for sybils
+        personalization[i] = 1
+        scores[i] = nx.pagerank_numpy(graph, personalization=personalization,
+                                      weight='weight').values()
+        personalization[i] = 0
+
+    return scores[:origN, :origN]
 
 
 def global_hitting_time(graph, num_strategic, sybil_pct):
@@ -124,8 +139,9 @@ def person_max_flow(graph, num_strategic, sybil_pct):
                 scores[i][j] = None if mf == 0 else mf
 
         # Now remove those edges again (a bit inefficiently)
-        cut_outlinks(graph, [i])
-        add_thin_edges(graph)
+        if i in strategic_agents:
+            for n in graph.nodes():
+                graph[i][n]['weight'] = THIN_EDGE_WEIGHT
 
         sys.stdout.write('.')
     sys.stdout.write("\n")
