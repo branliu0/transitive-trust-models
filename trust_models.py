@@ -33,9 +33,9 @@ def pagerank(graph, weighted=True):
         of agent i in the trust graph.
     """
     if weighted:
-        return nx.pagerank_numpy(graph).values()
+        return np.array(nx.pagerank_numpy(graph).values())
     else:
-        return nx.pagerank_numpy(graph, weight=None).values()
+        return np.array(nx.pagerank_numpy(graph, weight=None).values())
 
 
 def personalized_pagerank(graph, weighted=True):
