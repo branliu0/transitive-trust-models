@@ -140,8 +140,8 @@ def person_max_flow(graph, num_strategic, sybil_pct):
 
         # Now remove those edges again (a bit inefficiently)
         if i in strategic_agents:
-            for n in graph.nodes():
-                graph[i][n]['weight'] = THIN_EDGE_WEIGHT
+            for a, b, _ in saved_edges[i]:
+                graph[a][b]['weight'] = THIN_EDGE_WEIGHT
 
         sys.stdout.write('.')
     sys.stdout.write("\n")
