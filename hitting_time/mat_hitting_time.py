@@ -1,6 +1,34 @@
 import networkx as nx
 import numpy as np
 
+def single_eigen_ht(graph, i, j, alpha=0.15):
+    N = graph.number_of_nodes()
+    M = nx.to_numpy_matrix(graph)
+
+    # Handling dangling nodes and normalize all rows
+    for k in xrange(N):
+        s = M[k].sum()
+        if s == 0:
+            M[k, k] = 1
+        else:
+            M[k] /= s
+
+    # Set up the return loop
+    restart = np.zeros(N)
+    restart[i] = 1
+    M[j] = restart
+
+    ht_matrix = (1 - alpha) * nx.to_numpy_matrix(graph) + \
+            alpha * np.outer(np.ones(N), restart)
+
+    eigenvalues, eigenvectors = np.linalg.eig(ht_matrix.T)
+    dominant_index = eigenvalues.argsort()[-1]
+    pagerank = np.array(eigenvectors[:, dominant_index]).flatten().real
+    pagerank /= np.sum(pagerank)
+
+    return 1.0 / (1 - alpha + alpha / pagerank[j])
+
+
 def personalized_eigen_ht(graph, alpha=0.15):
     """
     Makes N^2 eigenvector calculations. Expected O(N^5).
