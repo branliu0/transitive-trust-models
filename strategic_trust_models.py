@@ -10,9 +10,28 @@ import sys
 
 import networkx as nx
 import numpy as np
+from scipy import stats
 
 from hitting_time.mat_hitting_time import personalized_LA_ht
 import trust_models as tm
+import utils
+
+def random_strategic_agents(graph, num_strategic):
+    return random.sample(graph.nodes(), num_strategic)
+
+
+def lowtype_strategic_agents(graph, num_strategic):
+    probs = 1 - np.array(graph.agent_types)
+    indices = np.arange(graph.number_of_nodes())
+    strategic_agents = []
+    for _ in xrange(num_strategic):
+        rv = stats.rv_discrete(name='lowtype', values=(
+            [i for i in indices if i not in strategic_agents],
+            utils.normalize([val for i, val in enumerate(probs)
+                             if i not in strategic_agents])))
+        strategic_agents.append(rv.rvs())
+    return np.array(graph.nodes())[strategic_agents]
+
 
 def cut_outlinks(graph, agents):
     graph.remove_edges_from(graph.edges(agents))
@@ -49,7 +68,7 @@ def global_pagerank(graph, num_strategic, sybil_pct):
     """
     graph = graph.copy()
     N = graph.number_of_nodes()
-    strategic_agents = random.sample(graph.nodes(), num_strategic)
+    strategic_agents = lowtype_strategic_agents(graph, num_strategic)
     num_sybils = int(graph.number_of_nodes() * sybil_pct)
     cut_outlinks(graph, strategic_agents)
     generate_sybils(graph, strategic_agents, num_sybils)
@@ -64,7 +83,7 @@ def person_pagerank(graph, num_strategic, sybil_pct):
     graph = graph.copy()
     origN = graph.number_of_nodes()
 
-    strategic_agents = random.sample(graph.nodes(), num_strategic)
+    strategic_agents = lowtype_strategic_agents(graph, num_strategic)
     cut_outlinks(graph, strategic_agents)
     add_thin_edges(graph)  # do this BEFORE sybils!!
     generate_sybils(graph, strategic_agents, 1)
@@ -90,7 +109,7 @@ def global_hitting_time(graph, num_strategic, sybil_pct):
     """
     graph = graph.copy()
     N = graph.number_of_nodes()
-    strategic_agents = random.sample(graph.nodes(), num_strategic)
+    strategic_agents = lowtype_strategic_agents(graph, num_strategic)
     num_sybils = int(graph.number_of_nodes() * sybil_pct)
     cut_outlinks(graph, strategic_agents)
     generate_sybils(graph, strategic_agents, num_sybils)
@@ -103,7 +122,7 @@ def person_hitting_time(graph, num_strategic, sybil_pct):
     Cut all outlinks.
     """
     graph = graph.copy()
-    strategic_agents = random.sample(graph.nodes(), num_strategic)
+    strategic_agents = lowtype_strategic_agents(graph, num_strategic)
     cut_outlinks(graph, strategic_agents)
     add_thin_edges(graph)
     return personalized_LA_ht(graph)
@@ -116,7 +135,7 @@ def person_max_flow(graph, num_strategic, sybil_pct):
     """
     graph = graph.copy()
     N = graph.number_of_nodes()
-    strategic_agents = random.sample(graph.nodes(), num_strategic)
+    strategic_agents = lowtype_strategic_agents(graph, num_strategic)
     saved_edges = {a: graph.edges(a, data=True) for a in strategic_agents}
     cut_outlinks(graph, strategic_agents)
     add_thin_edges(graph)
