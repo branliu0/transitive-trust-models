@@ -74,13 +74,19 @@ def naive_psmc_hitting_time(graph, num_trials, alpha=0.15):
     return hitting_time
 
 
-def complete_path_smc_hitting_time(graph, num_trials, alpha=0.15):
+def complete_path_smc_hitting_time(graph, num_trials=None, num_walks=None,
+                                   alpha=0.15):
+    if num_trials is None and num_walks is None:
+        raise ValueError("Must specify one of num_trials or num_walks")
+
     N = graph.number_of_nodes()
+    if num_walks is None:
+        num_walks = N * N * num_trials
     walk = RandomWalk(graph, alpha)
     hitting_time = np.zeros((N, N))
 
     for i in xrange(N):
-        for _ in xrange(N * num_trials):
+        for _ in xrange(num_walks / N):
             node = i
             hits = np.zeros(N)
             while True:
@@ -90,18 +96,24 @@ def complete_path_smc_hitting_time(graph, num_trials, alpha=0.15):
                 node = walk.step(node)
             hitting_time[i] += hits
 
-    hitting_time /= N * num_trials
+    hitting_time /= (num_walks / N)
     return hitting_time
 
 
-def generative_smc_hitting_time(graph, num_trials, alpha=0.15):
+def generative_smc_hitting_time(graph, num_trials=None, num_walks=None,
+                                alpha=0.15):
+    if num_trials is None and num_walks is None:
+        raise ValueError("Must specify one of num_trials or num_walks")
+
     N = graph.number_of_nodes()
+    if num_walks is None:
+        num_walks = N * N * num_trials
     walk = RandomWalk(graph, alpha)
     hits = np.zeros((N, N))
     walks = np.zeros(N)
 
     for i in xrange(N):
-        for _ in xrange(N * num_trials):
+        for _ in xrange(num_walks / N):
             # First simulate the random walk
             node = i
             steps = []
