@@ -14,6 +14,7 @@ import networkx as nx
 import numpy as np
 from scipy import stats
 
+from hitting_time.mat_hitting_time import global_eigen_ht
 import utils
 
 # This is the restart probability, i.e., the probability that at each step
@@ -210,6 +211,7 @@ def hitting_time(graph, pretrust_strategy, weighted=True, num_iters=1e5):
     pretrust_set = _hitting_time_pretrusted_set(graph, pretrust_strategy)
     return _hitting_time_all(pretrust_set, weighted, num_iters)
 
+
 def hitting_pagerank(graph, pretrust_strategy):
     """ Uses an eigenvector method to compute hitting time.
 
@@ -226,47 +228,10 @@ def hitting_pagerank(graph, pretrust_strategy):
 
     # Restart distribution: Uniform across all pretrusted nodes
     restart = np.zeros(num_nodes)
-    restart[list(pretrust_set)] = 1.0/len(pretrust_set)
+    restart[list(pretrust_set)] = 1
 
-    scores = []
-    for i in xrange(num_nodes):
-        adj_matrix = nx.to_numpy_matrix(graph)
+    return global_eigen_ht(graph, restart, ALPHA)
 
-        # Delete the out-nodes for node i, replace them with outedges
-        # that go straight back to the restart distribution, thus
-        # simulating the end of a "hit" by returning to the restart
-        # distribution.
-        adj_matrix[i] = restart
-
-        # For dangling nodes, we add a self-edge, which simulates getting
-        # "stuck" until we teleport.
-        for j in xrange(num_nodes):
-            if adj_matrix[j].sum() == 0:
-                adj_matrix[j, j] = 1
-
-        # Normalize outgoing edge weights for all nodes.
-        for j in xrange(num_nodes):
-            adj_matrix[j] /= adj_matrix[j].sum()
-
-        # Now add in the restart distribution to the matrix.
-        htpr_matrix = (1 - ALPHA) * adj_matrix + \
-                ALPHA * np.outer(np.ones(num_nodes), restart)
-
-        # To obtain PageRank score, take the dominant eigenvector, and
-        # pull out the score for node i
-        eigenvalues, eigenvectors = np.linalg.eig(htpr_matrix.T)
-        dominant_index = eigenvalues.argsort()[-1]
-        pagerank = np.array(eigenvectors[:, dominant_index]).flatten().real
-        pagerank /= np.sum(pagerank)
-
-        # Using Theorem 1 equation (ii) from Sheldon & Hopcroft 2007 and
-        # using the fact that for node i, the expected return time is just
-        # one more than the expected hitting time, since the first step
-        # away from node i will always be to a node in the pretrusted set,
-        # we arrive at this equation for deriving hitting time.
-        scores.append(1.0 / (1 - ALPHA + ALPHA / pagerank[i]))
-
-    return scores
 
 def max_flow(graph):
     """ All-pairs maximum flow.
