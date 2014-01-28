@@ -13,7 +13,7 @@ import numpy as np
 from scipy import stats
 
 from hitting_time.single_monte_carlo import complete_path_smc_hitting_time
-from hitting_time.mat_hitting_time import personalized_LA_ht
+from hitting_time.mat_hitting_time import personalized_LA_ht, global_LA_ht
 import trust_models as tm
 import utils
 
@@ -117,7 +117,7 @@ def global_hitting_time(graph, num_strategic, sybil_pct):
     num_sybils = int(graph.number_of_nodes() * sybil_pct)
     cut_outlinks(graph, strategic_agents)
     generate_sybils(graph, strategic_agents, num_sybils)
-    return tm.hitting_pagerank(graph, 'all')[:N]
+    return global_LA_ht(graph, np.ones(graph.number_of_nodes()))[:N]
 
 
 def global_smc_hitting_time(graph, num_strategic, sybil_pct):
