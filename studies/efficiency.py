@@ -1,3 +1,5 @@
+import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.misc
@@ -15,7 +17,9 @@ MECHANISMS = [
     (True, 'global_pagerank', stm.global_pagerank),
     (False, 'person_pagerank', stm.person_pagerank),
     (True, 'global_hitting_time', stm.global_hitting_time),
+    # (True, 'global_hitting_time', stm.global_smc_hitting_time),
     (False, 'person_hitting_time', stm.person_hitting_time),
+    # (False, 'person_hitting_time', stm.person_smc_hitting_time),
     (False, 'person_max_flow', stm.person_max_flow),
     (False, 'person_shortest_path', stm.person_shortest_path),
 ]
@@ -34,7 +38,8 @@ NUM_NODES = 50
 NUM_EDGES = 15
 NUM_SAMPLES = 32
 SYBIL_PCT = 0.50
-DEFAULT_STRATEGIC_COUNTS = [0, 3, 5, 10, 20]
+DEFAULT_STRATEGIC_COUNTS = [0, 1, 2, 3, 4, 5, 10, 20, 25]
+DEFAULT_SYBIL_PCTS = [0, 0.03, 0.07, 0.10, 0.13, 0.16, 0.2, 0.4, 0.6]
 NUM_CHOICES = 5
 
 
@@ -78,9 +83,6 @@ def compute_efficiency(agent_types, scores, is_global, K=NUM_CHOICES):
 
     if is_global:
         scores = np.repeat([scores], N, axis=0)
-        # ranks = stats.rankdata(scores, method='max')
-        # return sum(prob(ranks[i]) * agent_types[i] for i in xrange(N))
-
     effs = np.zeros(N)
     for i, row in enumerate(scores):
         removed_indices = [j for j, x in enumerate(row) if x is None]
@@ -95,7 +97,43 @@ def compute_efficiency(agent_types, scores, is_global, K=NUM_CHOICES):
     return effs.mean()
 
 
-def efficiency_experiments(num_iters, strategic_counts=None):
+def efficiency_by_sybil_pct(num_iters, num_strategic=None, sybil_pcts=None):
+    if not sybil_pcts:
+        sybil_pcts = DEFAULT_SYBIL_PCTS
+    if num_strategic is None:
+        num_strategic = NUM_NODES / 2
+    graphs = [[TrustGraph(NUM_NODES, 'uniform', 'uniform', NUM_EDGES,
+                          'noisy', NUM_SAMPLES) for _ in xrange(num_iters)]
+              for _ in xrange(len(sybil_pcts))]
+    informativeness = {n: np.zeros(len(sybil_pcts)) for n in NAMES}
+    efficiency = {n: np.zeros(len(sybil_pcts)) for n in NAMES}
+
+    for i, sybil_pct in enumerate(sybil_pcts):
+        for is_global, name, func in MECHANISMS:
+            info, eff = np.zeros(num_iters), np.zeros(num_iters)
+            for j in xrange(num_iters):
+                g = graphs[i][j]
+
+                start_time = time.clock()
+
+                scores = func(g, num_strategic, sybil_pct)
+                info[j] = compute_informativeness(g.agent_types, scores, is_global)
+                eff[j] = compute_efficiency(g.agent_types, scores, is_global)
+
+                total_time = time.clock() - start_time
+                print '%s took %.2f secs' % (name, total_time)
+            informativeness[name][i] = info.mean()
+            efficiency[name][i] = eff.mean()
+
+    return {'info': informativeness,
+            'eff': efficiency,
+            'xticks': sybil_pcts,
+            'xlabel': '% Sybils created per strategic agent',
+            'subtitle': '%d nodes, %d edges/node, %d strategic, (%d iters)' % (
+                    NUM_NODES, NUM_EDGES, num_strategic, num_iters)}
+
+
+def efficiency_by_strategic_counts(num_iters, strategic_counts=None):
     """
     1. Compute scores under manipulations.
     2. Compute informativeness WRT % of strategic agents.
@@ -122,21 +160,19 @@ def efficiency_experiments(num_iters, strategic_counts=None):
 
     return {'info': informativeness,
             'eff': efficiency,
-            'num_iters': num_iters}
+            'xticks': strategic_counts,
+            'xlabel': 'Number of Strategic Agents',
+            'subtitle': '%d nodes, %d edges/node, %d%% sybils (%d iters)' % (
+                    NUM_NODES, NUM_EDGES, int(100 * SYBIL_PCT), num_iters)}
 
-def plot(info, eff, num_iters, strategic_counts=None):
-    if not strategic_counts:
-        strategic_counts = DEFAULT_STRATEGIC_COUNTS
-
+def plot(info, eff, xticks, xlabel, subtitle):
     # Plotting Informativeness
     for n in NAMES:
-        plt.plot(strategic_counts, info[n], PLOT_LABELS[n], label=n)
+        plt.plot(xticks, info[n], PLOT_LABELS[n], label=n)
 
-    plt.suptitle('Informativeness of TTMs under manipulations\n'
-                 '%d nodes, %d edges/node, %d%% sybils (%d iters)' % (
-                    NUM_NODES, NUM_EDGES, int(100 * SYBIL_PCT), num_iters))
-    plt.xticks(strategic_counts, strategic_counts)
-    plt.xlabel('Number of Strategic Agents')
+    plt.suptitle('Informativeness of TTMs under manipulations\n' + subtitle)
+    plt.xticks(xticks, xticks)
+    plt.xlabel(xlabel)
     plt.ylabel('Informativeness (Speaman\'s rho)')
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5),
                fancybox=True, shadow=True)
@@ -145,14 +181,12 @@ def plot(info, eff, num_iters, strategic_counts=None):
 
     # Plotting Efficiency
     for n in NAMES:
-        plt.plot(strategic_counts, eff[n], PLOT_LABELS[n], label=n)
+        plt.plot(xticks, eff[n], PLOT_LABELS[n], label=n)
 
-    plt.suptitle('Efficiency of TTMs under manipulations\n'
-                 '%d nodes, %d edges/node, %d%% sybils, K = %d (%d iters)' % (
-                    NUM_NODES, NUM_EDGES, int(100 * SYBIL_PCT), NUM_CHOICES, num_iters))
-    plt.xticks(strategic_counts, strategic_counts)
-    plt.xlabel('Number of Strategic Agents')
-    plt.ylabel('Efficiency')
+    plt.suptitle('Efficiency of TTMs under manipulations\n' + subtitle)
+    plt.xticks(xticks, xticks)
+    plt.xlabel(xlabel)
+    plt.ylabel('Efficiency (K = %d)' % NUM_CHOICES)
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5),
                fancybox=True, shadow=True)
     plt.margins(0.07)
