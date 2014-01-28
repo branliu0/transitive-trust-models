@@ -76,8 +76,6 @@ class Experiment(object):
         (True, 'pagerank', tm.pagerank, [], {}),
         (True, 'hitting_time_all', tm.hitting_pagerank, ['all'], {}),
         (True, 'hitting_time_top', tm.hitting_pagerank, ['top'], {}),
-        # (True, 'hitting_time_all', tm.hitting_time, ['all'], {}),
-        # (True, 'hitting_time_top', tm.hitting_time, ['top'], {}),
         (False, 'max_flow', tm.max_flow, [], {}),
         (False, 'shortest_path', tm.shortest_path, [], {})
     ]

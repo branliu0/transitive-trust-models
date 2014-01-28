@@ -10,6 +10,10 @@ MC_ITERS = int(1e5)
 NUM_NODES = 5
 EDGE_PROB = 0.5
 
+### NOTE: The old tm.hitting_Time method has since been removed.
+### If still desired, please find the relevant MC hitting time in
+### the hitting_time module.
+
 def compare_hitting_times(num_graphs):
     graphs = []
     mc_ht = []

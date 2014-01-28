@@ -7,12 +7,10 @@ Please refer to the individual functions for more details on the trust
 models.
 """
 import heapq
-import random
 import sys
 
 import networkx as nx
 import numpy as np
-from scipy import stats
 
 from hitting_time.mat_hitting_time import global_eigen_ht
 import utils
@@ -86,130 +84,6 @@ def _hitting_time_pretrusted_set(graph, pretrust_strategy):
             key=lambda x: x[1]['agent_type'])
         return set(x[0] for x in top_nodes)
     raise ValueError("Invalid pretrust set strategy")
-
-
-def _hitting_time_single(graph, target_node, pretrust_set, weighted=True):
-    """ Returns the hitting time for a single node. """
-    # TODO: Can tune these numbers to get to a reasonable epsilon
-    MIN_ITERS = 3000
-    MAX_ITERS = 5000
-    MIN_HITS = 2
-
-    num_nodes = graph.number_of_nodes()
-
-    # Pregenerate a larger number of walks at once to try to save time.
-    def generate_walks(node, size=MIN_ITERS/10):
-        edges = graph.edges(node, data=True)
-        if not edges:
-            return [node] * size
-        if weighted:
-            rv = stats.rv_discrete(
-                values=([x[1] for x in edges],
-                            utils.normalize([x[2]['weight'] for x in edges])))
-            return list(rv.rvs(size=size))
-        else:
-            neighbors = [x[1] for x in edges]
-            return [random.choice(neighbors) for _ in xrange(size)]
-
-    walks = [[] for i in xrange(num_nodes)]
-    num_hits = 0
-    num_steps = 0
-    num_iters = 0
-
-    # Actually run the Monte-Carlo simulations
-
-    while (num_iters < MIN_ITERS or
-            (num_hits < MIN_HITS and num_iters < MAX_ITERS)):
-        cur_node = random.sample(pretrust_set, 1)[0]
-        num_iters += 1
-        while True:
-            # We hit the target!
-            if cur_node == target_node:
-                num_hits += 1
-                break
-
-            if utils.random_true(ALPHA):
-                break  # We jumped; start next iteration
-            else:
-                num_steps += 1
-                try:
-                    cur_node = walks[cur_node].pop()
-                except IndexError:
-                    walks[cur_node] = generate_walks(cur_node)
-                    cur_node = walks[cur_node].pop()
-
-    # print "%d steps taken" % num_steps
-    # print "%d hits" % num_hits
-    sys.stdout.write('.')  # Just to give an indicator of progress
-
-    return float(num_hits) / num_iters
-
-
-def _hitting_time_all(graph, pretrust_set, weighted=True, num_iters=1e5):
-    def generate_walks(node, size=100):
-        edges = graph.edges(node, data=True)
-        if not edges:
-            return [node] * size
-        if weighted:
-            rv = stats.rv_discrete(
-                values=([x[1] for x in edges],
-                            utils.normalize([x[2]['weight'] for x in edges])))
-            return list(rv.rvs(size=size))
-        else:
-            neighbors = [x[1] for x in edges]
-            return [random.choice(neighbors) for _ in xrange(size)]
-
-    def generate_coin_flips(size):
-        return list(stats.bernoulli.rvs(ALPHA, size=size))
-
-    num_nodes = graph.number_of_nodes()
-    hits = np.zeros(num_nodes)
-    coin_flips = generate_coin_flips(8 * num_iters)
-    walks = [generate_walks(i) for i in xrange(num_nodes)]
-
-    for i in xrange(num_iters):
-        if i % (num_iters / 50) == 0:
-            sys.stdout.write('.')
-
-        cur_node = random.sample(pretrust_set, 1)[0]
-        current_hits = dict.fromkeys(graph.nodes(), 0)
-        while True:
-            current_hits[cur_node] = 1  # Mark as hit, but only once
-            if coin_flips.pop():  # Restart?
-                break
-
-            if not coin_flips:
-                coin_flips = generate_coin_flips(1000)
-
-            if not walks[cur_node]:
-                walks[cur_node] = generate_walks(cur_node)
-
-            cur_node = walks[cur_node].pop()
-
-        for n in graph.nodes():
-            hits[n] += current_hits[n]
-
-    print
-    return list(hits / num_iters)
-
-def hitting_time(graph, pretrust_strategy, weighted=True, num_iters=1e5):
-    """ Hitting Time algorithm
-
-    The Hitting Time of a node is the probability that a random walk
-    started from a pretrusted set hits the node before jumping/restarting.
-
-    Args:
-        pretrust_strategy: 'all', 'prob', or 'top'. See
-            _hitting_time_pretrusted_set for more details.
-        weighted: Boolean for whether the HT algorithm should follow edges
-            based on weights or irrespective of their weights.
-
-    Returns:
-        An array where the ith element corresponds to the hitting time
-        of agent i.
-    """
-    pretrust_set = _hitting_time_pretrusted_set(graph, pretrust_strategy)
-    return _hitting_time_all(pretrust_set, weighted, num_iters)
 
 
 def hitting_pagerank(graph, pretrust_strategy):
