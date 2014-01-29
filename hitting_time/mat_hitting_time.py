@@ -33,8 +33,8 @@ def single_eigen_ht(graph, restart_dist, j, alpha=0.15):
 
 
 def global_eigen_ht(graph, restart_dist, alpha=0.15):
-    return [single_eigen_ht(graph, restart_dist, j, alpha)
-            for j in graph.nodes()]
+    return np.array([single_eigen_ht(graph, restart_dist, j, alpha)
+            for j in graph.nodes()])
 
 
 def personalized_eigen_ht(graph, alpha=0.15):
