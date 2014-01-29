@@ -72,7 +72,7 @@ def global_pagerank(graph, num_strategic, sybil_pct):
     """
     graph = graph.copy()
     N = graph.number_of_nodes()
-    strategic_agents = lowtype_strategic_agents(graph, num_strategic)
+    strategic_agents = random_strategic_agents(graph, num_strategic)
     num_sybils = int(graph.number_of_nodes() * sybil_pct)
     cut_outlinks(graph, strategic_agents)
     generate_sybils(graph, strategic_agents, num_sybils)
@@ -87,7 +87,7 @@ def person_pagerank(graph, num_strategic, sybil_pct):
     graph = graph.copy()
     origN = graph.number_of_nodes()
 
-    strategic_agents = lowtype_strategic_agents(graph, num_strategic)
+    strategic_agents = random_strategic_agents(graph, num_strategic)
     cut_outlinks(graph, strategic_agents)
     add_thin_edges(graph)  # do this BEFORE sybils!!
     generate_sybils(graph, strategic_agents, 1)
@@ -113,7 +113,7 @@ def global_hitting_time(graph, num_strategic, sybil_pct):
     """
     graph = graph.copy()
     N = graph.number_of_nodes()
-    strategic_agents = lowtype_strategic_agents(graph, num_strategic)
+    strategic_agents = random_strategic_agents(graph, num_strategic)
     num_sybils = int(graph.number_of_nodes() * sybil_pct)
     cut_outlinks(graph, strategic_agents)
     add_thin_edges(graph)
@@ -124,7 +124,7 @@ def global_hitting_time(graph, num_strategic, sybil_pct):
 def global_smc_hitting_time(graph, num_strategic, sybil_pct):
     graph = graph.copy()
     N = graph.number_of_nodes()
-    strategic_agents = lowtype_strategic_agents(graph, num_strategic)
+    strategic_agents = random_strategic_agents(graph, num_strategic)
     num_sybils = int(graph.number_of_nodes() * sybil_pct)
     cut_outlinks(graph, strategic_agents)
     generate_sybils(graph, strategic_agents, num_sybils)
@@ -139,7 +139,7 @@ def person_hitting_time(graph, num_strategic, sybil_pct):
     Cut all outlinks.
     """
     graph = graph.copy()
-    strategic_agents = lowtype_strategic_agents(graph, num_strategic)
+    strategic_agents = random_strategic_agents(graph, num_strategic)
     cut_outlinks(graph, strategic_agents)
     add_thin_edges(graph)
     return personalized_LA_ht(graph)
@@ -147,7 +147,7 @@ def person_hitting_time(graph, num_strategic, sybil_pct):
 
 def person_smc_hitting_time(graph, num_strategic, sybil_pct):
     graph = graph.copy()
-    strategic_agents = lowtype_strategic_agents(graph, num_strategic)
+    strategic_agents = random_strategic_agents(graph, num_strategic)
     cut_outlinks(graph, strategic_agents)
     add_thin_edges(graph)
     return complete_path_smc_hitting_time(graph, NUM_SMC_TRIALS)
@@ -160,7 +160,7 @@ def person_max_flow(graph, num_strategic, sybil_pct):
     """
     graph = graph.copy()
     N = graph.number_of_nodes()
-    strategic_agents = lowtype_strategic_agents(graph, num_strategic)
+    strategic_agents = random_strategic_agents(graph, num_strategic)
     saved_edges = {a: graph.edges(a, data=True) for a in strategic_agents}
     cut_outlinks(graph, strategic_agents)
     add_thin_edges(graph)
