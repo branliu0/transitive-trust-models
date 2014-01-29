@@ -116,6 +116,7 @@ def global_hitting_time(graph, num_strategic, sybil_pct):
     strategic_agents = lowtype_strategic_agents(graph, num_strategic)
     num_sybils = int(graph.number_of_nodes() * sybil_pct)
     cut_outlinks(graph, strategic_agents)
+    add_thin_edges(graph)
     generate_sybils(graph, strategic_agents, num_sybils)
     return global_LA_ht(graph, np.ones(graph.number_of_nodes()))[:N]
 
