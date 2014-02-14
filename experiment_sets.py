@@ -533,7 +533,7 @@ class SampleCountExperimentSet(ExperimentSet):
         # Values of infinity are set as 3 ticks higher than the max value
         INF_OFFSET = 3
         transformed = [math.log(x, 2) for x in xs if x != INFINITY]
-        ticks = list(transformed)
+        ticks = list(xs)
         try:
             inf_idx = next(i for i, x in enumerate(xs) if x == INFINITY)
             transformed.insert(inf_idx, max(transformed) + INF_OFFSET)
