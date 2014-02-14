@@ -165,6 +165,34 @@ def efficiency_by_strategic_counts(num_iters, strategic_counts=None):
             'subtitle': '%d nodes, %d edges/node, %d%% sybils (%d iters)' % (
                     NUM_NODES, NUM_EDGES, int(100 * SYBIL_PCT), num_iters)}
 
+
+def efficiency_by_edge_count(num_iters, edge_counts, num_strategic, sybil_pct):
+    graphs = [[TrustGraph(NUM_NODES, 'uniform', 'uniform', e, 'noisy',
+                          NUM_SAMPLES) for _ in xrange(num_iters)]
+              for e in edge_counts]
+    informativeness = {n: np.zeros(len(edge_counts)) for n in NAMES}
+    efficiency = {n: np.zeros(len(edge_counts)) for n in NAMES}
+
+    for i, _ in enumerate(edge_counts):
+        for is_global, name, func in MECHANISMS:
+            info, eff = np.zeros(num_iters), np.zeros(num_iters)
+            for j in xrange(num_iters):
+                g = graphs[i][j]
+                scores = func(g, num_strategic, sybil_pct)
+                info[j] = compute_informativeness(g.agent_types, scores, is_global)
+                eff[j] = compute_efficiency(g.agent_types, scores, is_global)
+            informativeness[name][i] = info.mean()
+            efficiency[name][i] = eff.mean()
+
+    return {'info': informativeness,
+            'eff': efficiency,
+            'xticks': edge_counts,
+            'xlabel': 'Number of edges per node',
+            'subtitle': '%d nodes, %d strategic, %d%% sybils (%d iters)' % (
+                    NUM_NODES, num_strategic, int(100 * sybil_pct), num_iters)}
+
+
+
 def plot(info, eff, xticks, xlabel, subtitle):
     # Plotting Informativeness
     for n in NAMES:
