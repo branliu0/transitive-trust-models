@@ -61,7 +61,7 @@ def single_LA_ht(graph, j, alpha=0.15):
     M[j] = 0  # Remove outedges of j
     A = np.eye(N) - (1 - alpha) * M
     b = np.repeat(1 - alpha, N)
-    return np.linalg.solve(A, b)
+    return -np.linalg.solve(A, b)
 
 
 def personalized_LA_ht(graph, alpha=0.15):
@@ -84,7 +84,7 @@ def personalized_LA_ht(graph, alpha=0.15):
     ht = np.zeros((N, N))
     for j in xrange(N):
         ht[:, j] = single_LA_ht(graph, j, alpha)
-    return -ht  # We negate to reverse the ordering
+    return ht
 
 
 def global_LA_ht(graph, weights, alpha=0.15):
