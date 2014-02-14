@@ -12,8 +12,7 @@ import networkx as nx
 import numpy as np
 from scipy import stats
 
-from hitting_time.single_monte_carlo import complete_path_smc_hitting_time
-from hitting_time.mat_hitting_time import personalized_LA_ht, global_LA_ht
+from hitting_time.mat_hitting_time import single_LA_ht, global_LA_ht
 import trust_models as tm
 import utils
 
@@ -40,15 +39,29 @@ def lowtype_strategic_agents(graph, num_strategic):
 def cut_outlinks(graph, agents):
     graph.remove_edges_from(graph.edges(agents))
 
+IDEAL_RADIUS = 3  # Arbitrarily picked...
 
-def generate_sybils(graph, agents, num_sybils):
+def generate_sybils(graph, agents, num_sybils, randomize_sybils=True):
+    """
+    Randomizes the number of sybils so that not all the agents have the same
+    number of sybils.
+    """
     sybil_counter = max(graph.nodes()) + 1
+
+    # Parametrize the uniform distribution for sybil counts
+    max_radius = num_sybils - 1  # distance from
+    radius = min(max_radius, IDEAL_RADIUS)
+    unif_a = num_sybils - radius
+    unif_b = num_sybils + radius
+
+
     for agent in agents:
+        sybil_count = random.randint(unif_a, unif_b) if randomize_sybils else num_sybils
         edges = [(agent, sybil)
-                 for sybil in xrange(sybil_counter, sybil_counter + num_sybils)]
-        edges += map(lambda x: x[::-1], edges)
+                 for sybil in xrange(sybil_counter, sybil_counter + sybil_count)]
+        edges += map(lambda x: x[::-1], edges)  # Add reverse edges
         graph.add_edges_from(edges)
-        sybil_counter += num_sybils
+        sybil_counter += sybil_count
 
 
 THIN_EDGE_WEIGHT=1e-5
@@ -60,9 +73,8 @@ def add_thin_edges(graph, edge_weight=THIN_EDGE_WEIGHT):
             if i == j:
                 continue
             if (i, j) not in edges:
-                graph.add_edge(i, j, weight=edge_weight)
-                # We don't bother with inv_weight because this method doesn't
-                # need to be used for shortest path.
+                graph.add_edge(i, j, weight=edge_weight,
+                               inv_weight=(1 / edge_weight))
 
 
 def global_pagerank(graph, num_strategic, sybil_pct):
@@ -90,7 +102,7 @@ def person_pagerank(graph, num_strategic, sybil_pct):
     strategic_agents = random_strategic_agents(graph, num_strategic)
     cut_outlinks(graph, strategic_agents)
     add_thin_edges(graph)  # do this BEFORE sybils!!
-    generate_sybils(graph, strategic_agents, 1)
+    generate_sybils(graph, strategic_agents, min(1, sybil_pct * origN))
 
     # We manually loop through personalize PageRank ourselves so that we can
     # avoid computing it for sybils.
@@ -107,63 +119,50 @@ def person_pagerank(graph, num_strategic, sybil_pct):
 
 
 def global_hitting_time(graph, num_strategic, sybil_pct):
-    """ Global Hitting Time.
-
-    Cut all outlinks + generate sybils.
-    """
     graph = graph.copy()
-    N = graph.number_of_nodes()
+    origN = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
     num_sybils = int(graph.number_of_nodes() * sybil_pct)
     cut_outlinks(graph, strategic_agents)
     add_thin_edges(graph)
     generate_sybils(graph, strategic_agents, num_sybils)
-    return global_LA_ht(graph, np.ones(graph.number_of_nodes()))[:N]
 
+    ht = np.zeros(origN)
+    for j in xrange(origN):
+        # Adding is the same as applying a uniform restart distribution over
+        # all nodes, including sybils
+        # We negate to correct for the direction of correlation
+        ht[j] = np.sum(single_LA_ht(graph, j))
 
-def global_smc_hitting_time(graph, num_strategic, sybil_pct):
-    graph = graph.copy()
-    N = graph.number_of_nodes()
-    strategic_agents = random_strategic_agents(graph, num_strategic)
-    num_sybils = int(graph.number_of_nodes() * sybil_pct)
-    cut_outlinks(graph, strategic_agents)
-    generate_sybils(graph, strategic_agents, num_sybils)
-
-    ht = complete_path_smc_hitting_time(graph, NUM_SMC_TRIALS)
-    return ht.sum(axis=1)[:N]
+    return ht
 
 
 def person_hitting_time(graph, num_strategic, sybil_pct):
-    """ Personalized Hitting Time.
-
-    Cut all outlinks.
-    """
     graph = graph.copy()
+    origN = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
+    num_sybils = int(graph.number_of_nodes() * sybil_pct)
     cut_outlinks(graph, strategic_agents)
     add_thin_edges(graph)
-    return personalized_LA_ht(graph)
+    generate_sybils(graph, strategic_agents, num_sybils)
 
+    N = graph.number_of_nodes()
+    ht = np.zeros((N, origN))
+    for j in xrange(origN):
+        ht[:, j] = single_LA_ht(graph, j)
 
-def person_smc_hitting_time(graph, num_strategic, sybil_pct):
-    graph = graph.copy()
-    strategic_agents = random_strategic_agents(graph, num_strategic)
-    cut_outlinks(graph, strategic_agents)
-    add_thin_edges(graph)
-    return complete_path_smc_hitting_time(graph, NUM_SMC_TRIALS)
+    return ht[:origN, :origN]
 
 
 def person_max_flow(graph, num_strategic, sybil_pct):
-    """ Personalized Max Flow.
-
-    Cut all outlinks.
-    """
     graph = graph.copy()
     N = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
+    num_sybils = int(graph.number_of_nodes() * sybil_pct)
     saved_edges = {a: graph.edges(a, data=True) for a in strategic_agents}
     cut_outlinks(graph, strategic_agents)
     add_thin_edges(graph)
+    generate_sybils(graph, strategic_agents, num_sybils)
 
     # Need to reimplement max flow here because we only want to cut outedges
     # When we're not being evaluated.
@@ -194,8 +193,33 @@ def person_max_flow(graph, num_strategic, sybil_pct):
 
 
 def person_shortest_path(graph, num_strategic, sybil_pct):
-    """ Personalized Shortest Path.
+    graph = graph.copy()
+    origN = graph.number_of_nodes()
+    strategic_agents = random_strategic_agents(graph, num_strategic)
+    num_sybils = int(graph.number_of_nodes() * sybil_pct)
+    saved_edges = {a: graph.edges(a, data=True) for a in strategic_agents}
+    cut_outlinks(graph, strategic_agents)
+    add_thin_edges(graph)
+    generate_sybils(graph, strategic_agents, num_sybils)
 
-    No manipulations.
-    """
-    return tm.shortest_path(graph)
+    shortest_paths = np.zeros((origN, origN))
+    for i in xrange(origN):
+        # Add back in outedges
+        if i in strategic_agents:
+            for a, b, d in saved_edges[i]:
+                graph[a][b]['inv_weight'] = d['inv_weight']
+
+        paths = nx.single_source_dijkstra_path_length(
+            graph, i, weight='inv_weight')
+        for j in xrange(origN):
+            try:
+                shortest_paths[i, j] = 1 / paths[j]
+            except ZeroDivisionError:
+                shortest_paths[i, j] = None
+
+        # remove them again
+        if i in strategic_agents:
+            for a, b, _ in saved_edges[i]:
+                graph[a][b]['inv_weight'] = 1 / float(THIN_EDGE_WEIGHT)
+
+    return shortest_paths
