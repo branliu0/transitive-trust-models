@@ -127,10 +127,10 @@ def generative_smc_hitting_time(graph, num_trials=None, num_walks=None,
             # Extract the analysis from the walk afterward, all at once
             seen = np.repeat(False, N)
             for n in reversed(steps):
-                if seen[n]:
-                    continue
-                seen[n] = True
-                hits[counter.keys(), n] += counter.values()
-                walks[n] += counter[n]
+                if not seen[n]:
+                    seen[n] = True
+                    hits[counter.keys(), n] += counter.values()
+                    walks[n] += counter[n]
                 counter[n] -= 1
+
     return hits / np.outer(walks, np.ones(N))
