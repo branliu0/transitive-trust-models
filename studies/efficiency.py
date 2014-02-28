@@ -1,3 +1,4 @@
+import multiprocessing
 import time
 
 import matplotlib.pyplot as plt
@@ -48,7 +49,14 @@ NUM_EDGES = 15
 DEFAULT_STRATEGIC_COUNTS = [0, 3, 5, 10, 15, 20, 25]
 
 
+def compute_scores(stm_func, graph, num_strategic, sybil_pct):
+    return stm_func(graph, num_strategic, sybil_pct)
+
+
 def compute_informativeness(agent_types, scores, is_global):
+    # Add some noise to avoid ties
+    scores += np.random.normal(scale=1e-4, size=scores.shape)
+
     if is_global:
         # Spearman's rho
         corr, _ = stats.spearmanr(agent_types, scores)
@@ -81,6 +89,9 @@ def compute_efficiency(agent_types, scores, is_global, K=NUM_CHOICES):
         return (float(K) / N) * (
             scipy.misc.comb(i, K - 1) / scipy.misc.comb(N - 1, K - 1))
 
+    # Add a tiny bit of noise so that we don't get ties in our rankings
+    scores += np.random.normal(scale=1e-4, size=scores.shape)
+
     if is_global:
         scores = np.repeat([scores], N, axis=0)
     effs = np.zeros(N)
@@ -97,7 +108,8 @@ def compute_efficiency(agent_types, scores, is_global, K=NUM_CHOICES):
     return effs.mean()
 
 
-def efficiency_by_sybil_pct(num_iters, num_strategic=None, sybil_pcts=None):
+def efficiency_by_sybil_pct(num_iters, num_strategic=None, sybil_pcts=None,
+                            cutlinks=True, gensybils=True):
     if not sybil_pcts:
         sybil_pcts = DEFAULT_SYBIL_PCTS
     if num_strategic is None:
@@ -116,7 +128,7 @@ def efficiency_by_sybil_pct(num_iters, num_strategic=None, sybil_pcts=None):
 
                 start_time = time.clock()
 
-                scores = func(g, num_strategic, sybil_pct)
+                scores = func(g, num_strategic, sybil_pct, cutlinks, gensybils)
                 info[j] = compute_informativeness(g.agent_types, scores, is_global)
                 eff[j] = compute_efficiency(g.agent_types, scores, is_global)
 
@@ -133,7 +145,8 @@ def efficiency_by_sybil_pct(num_iters, num_strategic=None, sybil_pcts=None):
                     NUM_NODES, NUM_EDGES, num_strategic, num_iters)}
 
 
-def efficiency_by_strategic_counts(num_iters, strategic_counts=None):
+def efficiency_by_strategic_counts(num_iters, strategic_counts=None,
+                                   cutlinks=True, gensybils=True):
     """
     1. Compute scores under manipulations.
     2. Compute informativeness WRT % of strategic agents.
@@ -152,7 +165,7 @@ def efficiency_by_strategic_counts(num_iters, strategic_counts=None):
             info, eff = np.zeros(num_iters), np.zeros(num_iters)
             for j in xrange(num_iters):
                 g = graphs[i][j]
-                scores = func(g, num_strategic, SYBIL_PCT)
+                scores = func(g, num_strategic, SYBIL_PCT, cutlinks, gensybils)
                 info[j] = compute_informativeness(g.agent_types, scores, is_global)
                 eff[j] = compute_efficiency(g.agent_types, scores, is_global)
             informativeness[name][i] = info.mean()
@@ -166,7 +179,8 @@ def efficiency_by_strategic_counts(num_iters, strategic_counts=None):
                     NUM_NODES, NUM_EDGES, int(100 * SYBIL_PCT), num_iters)}
 
 
-def efficiency_by_edge_count(num_iters, edge_counts, num_strategic, sybil_pct):
+def efficiency_by_edge_count(num_iters, edge_counts, num_strategic, sybil_pct,
+                             cutlinks=True, gensybils=True):
     graphs = [[TrustGraph(NUM_NODES, 'uniform', 'uniform', e, 'noisy',
                           NUM_SAMPLES) for _ in xrange(num_iters)]
               for e in edge_counts]
@@ -178,7 +192,7 @@ def efficiency_by_edge_count(num_iters, edge_counts, num_strategic, sybil_pct):
             info, eff = np.zeros(num_iters), np.zeros(num_iters)
             for j in xrange(num_iters):
                 g = graphs[i][j]
-                scores = func(g, num_strategic, sybil_pct)
+                scores = func(g, num_strategic, sybil_pct, cutlinks, gensybils)
                 info[j] = compute_informativeness(g.agent_types, scores, is_global)
                 eff[j] = compute_efficiency(g.agent_types, scores, is_global)
             informativeness[name][i] = info.mean()

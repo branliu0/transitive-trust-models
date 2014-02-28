@@ -12,7 +12,7 @@ import networkx as nx
 import numpy as np
 from scipy import stats
 
-from hitting_time.mat_hitting_time import single_LA_ht, global_LA_ht
+from hitting_time.mat_hitting_time import single_LA_ht
 import trust_models as tm
 import utils
 
@@ -77,7 +77,8 @@ def add_thin_edges(graph, edge_weight=THIN_EDGE_WEIGHT):
                                inv_weight=(1 / edge_weight))
 
 
-def global_pagerank(graph, num_strategic, sybil_pct):
+def global_pagerank(graph, num_strategic, sybil_pct,
+                    cutlinks=True, gensybils=True):
     """ Global PageRank.
 
     Cut all outlinks + generate sybils.
@@ -86,12 +87,15 @@ def global_pagerank(graph, num_strategic, sybil_pct):
     N = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
     num_sybils = int(graph.number_of_nodes() * sybil_pct)
-    cut_outlinks(graph, strategic_agents)
-    generate_sybils(graph, strategic_agents, num_sybils)
+    if cutlinks:
+        cut_outlinks(graph, strategic_agents)
+    if gensybils:
+        generate_sybils(graph, strategic_agents, num_sybils)
     return tm.pagerank(graph)[:N]
 
 
-def person_pagerank(graph, num_strategic, sybil_pct):
+def person_pagerank(graph, num_strategic, sybil_pct,
+                    cutlinks=True, gensybils=True):
     """ Personalized PageRank.
 
     Cut all outlinks + generate one sybil.
@@ -100,9 +104,11 @@ def person_pagerank(graph, num_strategic, sybil_pct):
     origN = graph.number_of_nodes()
 
     strategic_agents = random_strategic_agents(graph, num_strategic)
-    cut_outlinks(graph, strategic_agents)
-    add_thin_edges(graph)  # do this BEFORE sybils!!
-    generate_sybils(graph, strategic_agents, min(1, sybil_pct * origN))
+    if cutlinks:
+        cut_outlinks(graph, strategic_agents)
+        add_thin_edges(graph)  # do this BEFORE sybils!!
+    if gensybils:
+        generate_sybils(graph, strategic_agents, min(1, sybil_pct * origN))
 
     # We manually loop through personalize PageRank ourselves so that we can
     # avoid computing it for sybils.
@@ -118,14 +124,17 @@ def person_pagerank(graph, num_strategic, sybil_pct):
     return scores[:origN, :origN]
 
 
-def global_hitting_time(graph, num_strategic, sybil_pct):
+def global_hitting_time(graph, num_strategic, sybil_pct,
+                        cutlinks=True, gensybils=True):
     graph = graph.copy()
     origN = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
     num_sybils = int(graph.number_of_nodes() * sybil_pct)
-    cut_outlinks(graph, strategic_agents)
-    add_thin_edges(graph)
-    generate_sybils(graph, strategic_agents, num_sybils)
+    if cutlinks:
+        cut_outlinks(graph, strategic_agents)
+        add_thin_edges(graph)
+    if gensybils:
+        generate_sybils(graph, strategic_agents, num_sybils)
 
     ht = np.zeros(origN)
     for j in xrange(origN):
@@ -137,14 +146,17 @@ def global_hitting_time(graph, num_strategic, sybil_pct):
     return ht
 
 
-def person_hitting_time(graph, num_strategic, sybil_pct):
+def person_hitting_time(graph, num_strategic, sybil_pct,
+                        cutlinks=True, gensybils=True):
     graph = graph.copy()
     origN = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
     num_sybils = int(graph.number_of_nodes() * sybil_pct)
-    cut_outlinks(graph, strategic_agents)
-    add_thin_edges(graph)
-    generate_sybils(graph, strategic_agents, num_sybils)
+    if cutlinks:
+        cut_outlinks(graph, strategic_agents)
+        add_thin_edges(graph)
+    if gensybils:
+        generate_sybils(graph, strategic_agents, num_sybils)
 
     N = graph.number_of_nodes()
     ht = np.zeros((N, origN))
@@ -154,22 +166,26 @@ def person_hitting_time(graph, num_strategic, sybil_pct):
     return ht[:origN, :origN]
 
 
-def person_max_flow(graph, num_strategic, sybil_pct):
+def person_max_flow(graph, num_strategic, sybil_pct,
+                    cutlinks=True, gensybils=True):
     graph = graph.copy()
     N = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
     num_sybils = int(graph.number_of_nodes() * sybil_pct)
-    saved_edges = {a: graph.edges(a, data=True) for a in strategic_agents}
-    cut_outlinks(graph, strategic_agents)
-    add_thin_edges(graph)
-    generate_sybils(graph, strategic_agents, num_sybils)
+    saved_edges = {}
+    if cutlinks:
+        saved_edges = {a: graph.edges(a, data=True) for a in strategic_agents}
+        cut_outlinks(graph, strategic_agents)
+        add_thin_edges(graph)
+    if gensybils:
+        generate_sybils(graph, strategic_agents, num_sybils)
 
     # Need to reimplement max flow here because we only want to cut outedges
     # When we're not being evaluated.
     scores = np.zeros((N, N))
     for i in xrange(N):
         # Add back in the edges for this agent, so we can get an actual score.
-        if i in strategic_agents:
+        if i in saved_edges:
             for a, b, d in saved_edges[i]:
                 graph[a][b]['weight'] = d['weight']
 
@@ -182,7 +198,7 @@ def person_max_flow(graph, num_strategic, sybil_pct):
                 scores[i][j] = None if mf == 0 else mf
 
         # Now remove those edges again (a bit inefficiently)
-        if i in strategic_agents:
+        if i in saved_edges:
             for a, b, _ in saved_edges[i]:
                 graph[a][b]['weight'] = THIN_EDGE_WEIGHT
 
@@ -192,20 +208,24 @@ def person_max_flow(graph, num_strategic, sybil_pct):
     return scores
 
 
-def person_shortest_path(graph, num_strategic, sybil_pct):
+def person_shortest_path(graph, num_strategic, sybil_pct,
+                         cutlinks=True, gensybils=True):
     graph = graph.copy()
     origN = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
     num_sybils = int(graph.number_of_nodes() * sybil_pct)
-    saved_edges = {a: graph.edges(a, data=True) for a in strategic_agents}
-    cut_outlinks(graph, strategic_agents)
-    add_thin_edges(graph)
-    generate_sybils(graph, strategic_agents, num_sybils)
+    saved_edges = {}
+    if cutlinks:
+        saved_edges = {a: graph.edges(a, data=True) for a in strategic_agents}
+        cut_outlinks(graph, strategic_agents)
+        add_thin_edges(graph)
+    if gensybils:
+        generate_sybils(graph, strategic_agents, num_sybils)
 
     shortest_paths = np.zeros((origN, origN))
     for i in xrange(origN):
         # Add back in outedges
-        if i in strategic_agents:
+        if i in saved_edges:
             for a, b, d in saved_edges[i]:
                 graph[a][b]['inv_weight'] = d['inv_weight']
 
@@ -218,8 +238,8 @@ def person_shortest_path(graph, num_strategic, sybil_pct):
                 shortest_paths[i, j] = None
 
         # remove them again
-        if i in strategic_agents:
+        if i in saved_edges:
             for a, b, _ in saved_edges[i]:
-                graph[a][b]['inv_weight'] = 1 / float(THIN_EDGE_WEIGHT)
+                graph[a][b]['inv_weight'] = 1 / THIN_EDGE_WEIGHT
 
     return shortest_paths
