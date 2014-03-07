@@ -87,7 +87,7 @@ def personalized_LA_ht(graph, alpha=0.15):
     return ht
 
 
-def global_LA_ht(graph, weights, alpha=0.15):
+def global_LA_ht(graph, weights=None, alpha=0.15):
     """ Global hitting time using linear algebra methods.
 
     Args:
@@ -95,5 +95,7 @@ def global_LA_ht(graph, weights, alpha=0.15):
         weights: A list of non-negative weights, in nodelist order.
         alpha: Termination probability.
     """
+    if not weights:
+        weights = np.ones(graph.number_of_nodes())
     ht = personalized_LA_ht(graph, alpha)
     return np.dot(np.transpose(ht), np.array(utils.normalize(weights)))
