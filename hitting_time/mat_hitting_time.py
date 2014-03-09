@@ -61,6 +61,7 @@ def single_LA_ht(graph, j, alpha=0.15):
     M[j] = 0  # Remove outedges of j
     A = np.eye(N) - (1 - alpha) * M
     b = np.repeat(1 - alpha, N)
+    b[j] = 0
     return -np.linalg.solve(A, b)
 
 
