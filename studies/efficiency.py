@@ -85,7 +85,7 @@ def compute_efficiency(agent_types, scores, is_global, K=NUM_CHOICES):
     def prob(i):
         # Probability of the i-th index element being the highest ranked element
         # in a random NUM_CHOICES-sample from NUM_NODES elements.
-        # i \in 1, 2, ..., NUM_NODES
+        # i \in 0, 1, 2, ..., NUM_NODES - 1
         return (float(K) / N) * (
             scipy.misc.comb(i, K - 1) / scipy.misc.comb(N - 1, K - 1))
 
