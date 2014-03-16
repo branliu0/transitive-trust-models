@@ -13,7 +13,7 @@ def single_eigen_ht(graph, restart_dist, j, alpha=0.15):
     # Handling dangling nodes and normalize all rows
     for k in xrange(N):
         s = M[k].sum()
-        # Dangling nodes become absorbinb states.
+        # Dangling nodes become absorbing states.
         if s == 0:
             M[k, k] = 1
         else:
