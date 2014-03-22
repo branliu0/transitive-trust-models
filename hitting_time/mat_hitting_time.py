@@ -3,11 +3,6 @@ import numpy as np
 
 import utils
 
-# So, it's going to be
-# 1. LS_step_length_ht
-# 2. LS_prob_ht
-# 3. eigen_prob_ht
-
 ###############################################################################
 # 1. Linear Systems Step Length Hitting Time
 #
@@ -60,6 +55,58 @@ def global_LS_step_length_ht(graph, weights=None, alpha=0.15):
     ht = personalized_LS_step_length_ht(graph, alpha)
     return np.dot(np.transpose(ht), np.array(utils.normalize(weights)))
 
+
+###############################################################################
+# 2. Linear Systems Probability Hitting Time
+#
+
+def single_LS_prob_ht(graph, j, alpha=0.15):
+    N = graph.number_of_nodes()
+    M = nx.to_numpy_matrix(graph)
+    for i in xrange(N):  # Normalize
+        M[i] /= M[i].sum()
+    M[j] = 0  # Remove outedges of j
+    A = np.eye(N) - (1 - alpha) * M
+    b = np.zeros(N)
+    b[j] = 1
+    return np.linalg.solve(A, b)
+
+
+def personalized_LS_prob_ht(graph, alpha=0.15):
+    """ Computes personalized hitting time using a linear equation method.
+
+    This is expected O(N^4).
+
+    This is based on the formula
+
+        (I - (1 - alpha) * M(j)) * h(j) = (1 - alpha) * 1
+
+    which allows us to solve for the h_{ij} for one particular j by solving a
+    system of linear equations with N variables and N equations. We repeat this
+    N times to obtain all N^2 personalized hitting times.
+
+    Returns:
+        An NxN numpy matrix containing the personalized hitting times.
+    """
+    N = graph.number_of_nodes()
+    ht = np.zeros((N, N))
+    for j in xrange(N):
+        ht[:, j] = single_LS_prob_ht(graph, j, alpha)
+    return ht
+
+
+def global_LS_prob_ht(graph, weights=None, alpha=0.15):
+    """ Global hitting time using linear algebra methods.
+
+    Args:
+        graph: The trust graph.
+        weights: A list of non-negative weights, in nodelist order.
+        alpha: Termination probability.
+    """
+    if not weights:
+        weights = np.ones(graph.number_of_nodes())
+    ht = personalized_LS_prob_ht(graph, alpha)
+    return np.dot(np.transpose(ht), np.array(utils.normalize(weights)))
 
 ###############################################################################
 # 3. Eigen Probability Hitting Time
