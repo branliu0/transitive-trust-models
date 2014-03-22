@@ -4,7 +4,6 @@ Dec 16, 2013
 """
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import stats
 
 from experiment_sets import EdgeCountExperimentSet
 import studies.efficiency as e
