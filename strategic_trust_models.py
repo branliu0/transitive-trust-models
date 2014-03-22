@@ -12,7 +12,7 @@ import networkx as nx
 import numpy as np
 from scipy import stats
 
-from hitting_time.mat_hitting_time import single_LA_ht
+from hitting_time.mat_hitting_time import single_LS_step_length_ht
 import trust_models as tm
 import utils
 
@@ -141,7 +141,7 @@ def global_hitting_time(graph, num_strategic, sybil_pct,
         # Adding is the same as applying a uniform restart distribution over
         # all nodes, including sybils
         # We negate to correct for the direction of correlation
-        ht[j] = np.sum(single_LA_ht(graph, j))
+        ht[j] = np.sum(single_LS_step_length_ht(graph, j))
 
     return ht
 
@@ -161,7 +161,7 @@ def person_hitting_time(graph, num_strategic, sybil_pct,
     N = graph.number_of_nodes()
     ht = np.zeros((N, origN))
     for j in xrange(origN):
-        ht[:, j] = single_LA_ht(graph, j)
+        ht[:, j] = single_LS_step_length_ht(graph, j)
 
     return ht[:origN, :origN]
 

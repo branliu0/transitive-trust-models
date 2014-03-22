@@ -22,7 +22,7 @@ def time_experiment(num_iters, smc_walks=5):
     for i, graph_set in enumerate(graphs):
         for j, g in enumerate(graph_set):
             start_time = time.clock()
-            ht_mat = m.personalized_LA_ht(g)
+            ht_mat = m.personalized_LS_step_length_ht(g)
             mat_times[i, j] = time.clock() - start_time
             print '[%d]: mat took %.2f secs' % (len(g), mat_times[i, j])
 

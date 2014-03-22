@@ -12,7 +12,7 @@ import sys
 import networkx as nx
 import numpy as np
 
-from hitting_time.mat_hitting_time import global_eigen_ht
+from hitting_time.mat_hitting_time import global_eigen_prob_ht
 import utils
 
 # This is the restart probability, i.e., the probability that at each step
@@ -104,7 +104,7 @@ def hitting_pagerank(graph, pretrust_strategy):
     restart = np.zeros(num_nodes)
     restart[list(pretrust_set)] = 1
 
-    return global_eigen_ht(graph, restart, ALPHA)
+    return global_eigen_prob_ht(graph, restart, ALPHA)
 
 
 def max_flow(graph):

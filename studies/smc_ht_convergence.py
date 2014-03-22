@@ -4,7 +4,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
-from hitting_time.mat_hitting_time import personalized_eigen_ht
+from hitting_time.mat_hitting_time import personalized_eigen_prob_ht
 from hitting_time.single_monte_carlo import complete_path_smc_hitting_time
 from hitting_time.single_monte_carlo import generative_smc_hitting_time
 from hitting_time.single_monte_carlo import naive_smc_hitting_time
@@ -31,7 +31,7 @@ def convergence_by_walks(num_iterations, trials=None, filename=None):
               for _ in trials]
 
     # Use eigen hitting time to compute a very accurate estimate
-    best_estimates = [[personalized_eigen_ht(g) for g in trial]
+    best_estimates = [[personalized_eigen_prob_ht(g) for g in trial]
                       for trial in graphs]
 
     # Run the simulations
@@ -102,7 +102,7 @@ def convergence_by_nodes(num_iterations, nodes=None, num_walks=25000, filename=N
     graphs = [[utils.random_weighted_graph(num_nodes, EDGE_PROB)
                for _ in xrange(num_iterations)]
               for num_nodes in nodes]
-    best_estimates = [[personalized_eigen_ht(g) for g in trial]
+    best_estimates = [[personalized_eigen_prob_ht(g) for g in trial]
                       for trial in graphs]
 
     means = np.zeros((len(METHODS), len(nodes)))
