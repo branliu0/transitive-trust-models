@@ -1,4 +1,5 @@
 import math
+import random
 
 import networkx as nx
 import numpy as np
@@ -14,6 +15,12 @@ def normalize(array):
     """ Normalizes an array of values so that the sum of the array is unity. """
     total = float(sum(array))
     return [x / total for x in array]
+
+
+def random_round(i):
+    base = int(i)
+    dec = i - base
+    return base + (1 if random.random() > dec else 0)
 
 
 def softmax_rv(masses, values=None, z=0.05):
@@ -142,6 +149,12 @@ def random_weighted_graph(num_nodes, edge_prob, weight_dist='uniform'):
         g[e[0]][e[1]]['weight'] = weights[i]
     return g
 
+def weighted_ba_graph(N, K, weight_dist='uniform'):
+    g = nx.barabasi_albert_graph(N, K)
+    weights = agent_type_rv(weight_dist).rvs(size=g.number_of_edges())
+    for i, e in enumerate(g.edges_iter()):
+        g[e[0]][e[1]]['weight'] = weights[i]
+    return g
 
 class RegenList(list):
     """ Regenerating List, convenient for auto-regenerating values in bulk

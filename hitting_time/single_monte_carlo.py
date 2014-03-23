@@ -2,10 +2,10 @@ from collections import defaultdict
 
 import numpy as np
 
-from utils import RandomWalk
+from utils import RandomWalk, random_round
 
 
-def naive_smc_hitting_time(graph, num_trials, alpha=0.15):
+def naive_smc_hitting_time(graph, num_walks=None, num_trials=None, alpha=0.15):
     """
     Naive: Tries `num_trial` random walks for each pair of nodes (i, j).
     SMC: Single-threaded Monte Carlo
@@ -14,6 +14,9 @@ def naive_smc_hitting_time(graph, num_trials, alpha=0.15):
     walk = RandomWalk(graph, alpha)
     hitting_time = np.zeros((N, N))
 
+    if num_trials is None:
+        num_trials = num_walks / float(N * N)
+
     for i in xrange(N):
         for j in xrange(N):
             # If we start here, we're already here!
@@ -21,7 +24,7 @@ def naive_smc_hitting_time(graph, num_trials, alpha=0.15):
                 hitting_time[i][j] = 1
                 continue
 
-            for _ in xrange(num_trials):
+            for _ in xrange(random_round(num_trials)):
                 node = i
                 while True:
                     if node == j:
@@ -86,7 +89,7 @@ def multihit_smc_hitting_time(graph, num_trials=None, num_walks=None,
     hitting_time = np.zeros((N, N))
 
     for i in xrange(N):
-        for _ in xrange(num_walks / N):
+        for _ in xrange(random_round(float(num_walks) / N)):
             node = i
             hits = np.zeros(N)
             while True:
@@ -113,7 +116,7 @@ def multiwalk_smc_hitting_time(graph, num_trials=None, num_walks=None,
     walks = np.zeros(N)
 
     for i in xrange(N):
-        for _ in xrange(num_walks / N):
+        for _ in xrange(random_round(float(num_walks) / N)):
             # First simulate the random walk
             node = i
             steps = []
