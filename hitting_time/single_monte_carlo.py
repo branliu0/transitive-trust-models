@@ -74,7 +74,7 @@ def naive_psmc_hitting_time(graph, num_trials, alpha=0.15):
     return hitting_time
 
 
-def complete_path_smc_hitting_time(graph, num_trials=None, num_walks=None,
+def multihit_smc_hitting_time(graph, num_trials=None, num_walks=None,
                                    alpha=0.15):
     if num_trials is None and num_walks is None:
         raise ValueError("Must specify one of num_trials or num_walks")
@@ -100,7 +100,7 @@ def complete_path_smc_hitting_time(graph, num_trials=None, num_walks=None,
     return hitting_time
 
 
-def generative_smc_hitting_time(graph, num_trials=None, num_walks=None,
+def multiwalk_smc_hitting_time(graph, num_trials=None, num_walks=None,
                                 alpha=0.15):
     if num_trials is None and num_walks is None:
         raise ValueError("Must specify one of num_trials or num_walks")
