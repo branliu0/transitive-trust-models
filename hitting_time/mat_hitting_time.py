@@ -7,7 +7,7 @@ import utils
 # 1. Linear Systems Step Length Hitting Time
 #
 
-def single_LS_step_length_ht(graph, j, alpha=0.15):
+def single_LS_step_length_ht(graph, j, alpha=0.15, python=False):
     N = graph.number_of_nodes()
     M = nx.to_numpy_matrix(graph)
     for i in xrange(N):  # Normalize
@@ -16,7 +16,10 @@ def single_LS_step_length_ht(graph, j, alpha=0.15):
     A = np.eye(N) - (1 - alpha) * M
     b = np.repeat(1 - alpha, N)
     b[j] = 0
-    return -np.linalg.solve(A, b)
+    if python:
+        return -utils.solve(A.tolist(), b.tolist())
+    else:
+        return -np.linalg.solve(A, b)
 
 
 def personalized_LS_step_length_ht(graph, alpha=0.15):
@@ -60,7 +63,7 @@ def global_LS_step_length_ht(graph, weights=None, alpha=0.15):
 # 2. Linear Systems Probability Hitting Time
 #
 
-def single_LS_prob_ht(graph, j, alpha=0.15):
+def single_LS_prob_ht(graph, j, alpha=0.15, python=False):
     N = graph.number_of_nodes()
     M = nx.to_numpy_matrix(graph)
     for i in xrange(N):  # Normalize
@@ -69,7 +72,10 @@ def single_LS_prob_ht(graph, j, alpha=0.15):
     A = np.eye(N) - (1 - alpha) * M
     b = np.zeros(N)
     b[j] = 1
-    return np.linalg.solve(A, b)
+    if python:
+        return utils.ls_solve(A.tolist(), b.tolist())
+    else:
+        return np.linalg.solve(A, b)
 
 
 def personalized_LS_prob_ht(graph, alpha=0.15):
