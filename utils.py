@@ -1,5 +1,6 @@
 import math
 import random
+from collections import deque
 
 import networkx as nx
 import numpy as np
@@ -156,12 +157,11 @@ def weighted_ba_graph(N, K, weight_dist='uniform'):
         g[e[0]][e[1]]['weight'] = weights[i]
     return g
 
-class RegenList(list):
+
+class RegenList(deque):
     """ Regenerating List, convenient for auto-regenerating values in bulk
 
-    This slight extension to Python's native list data structure makes it easy
-    to create pseudo-streams that continually provide values, but generate
-    them in bulk (for computational efficiency).
+    Uses python's deque data structure for high performance.
     """
 
     def __init__(self, gen_lambda, *args):
@@ -176,14 +176,10 @@ class RegenList(list):
         self.args = args
         self.extend(gen_lambda(*self.args))
 
-    def pop(self, *args, **kwargs):
+    def pop(self):
         if not self:
             self.regen(*self.args)
-        return super(RegenList, self).pop(*args, **kwargs)
-
-    def shift(self):
-        """ Sadly Python's list does not have a shift function. """
-        return self.pop(0)
+        return self.popleft()
 
     def regen(self, *args):
         self.extend(self.gen_lambda(*args))
@@ -212,11 +208,12 @@ class RandomWalk(object):
         for node in graph.nodes():
             edges = graph.edges(node, data=True)
             if edges:
-                rv = stats.rv_discrete(
-                    values=([x[1] for x in edges],
-                            normalize([x[2]['weight'] for x in edges])))
+                values = np.array([x[1] for x in edges])
+                probs = normalize([x[2]['weight'] for x in edges])
+                bins = np.cumsum(probs)
                 self.steps[node] = RegenList(
-                    lambda rv: rv.rvs(size=int(N / alpha)), rv)
+                    lambda values, bins: values[np.digitize(
+                        np.random.random(int(N / alpha)), bins)], values, bins)
             else:
                 # What else can be done for dangling nodes?
                 self.steps[node] = RegenList(lambda: [None] * int(N / alpha))
