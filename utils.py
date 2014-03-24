@@ -222,7 +222,7 @@ class RandomWalk(object):
                 self.steps[node] = RegenList(lambda: [None] * int(N / alpha))
 
     def terminates(self):
-        return self.terminator.shift()
+        return self.terminator.pop()
 
     def step(self, node):
-        return self.steps[node].shift()
+        return self.steps[node].pop()
