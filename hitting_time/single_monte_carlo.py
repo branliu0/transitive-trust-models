@@ -5,7 +5,7 @@ import numpy as np
 from utils import RandomWalk, random_round
 
 
-def naive_smc_hitting_time(graph, num_walks=None, num_trials=None, alpha=0.15):
+def naive_smc_hitting_time(graph, num_walks, alpha=0.15):
     """
     Naive: Tries `num_trial` random walks for each pair of nodes (i, j).
     SMC: Single-threaded Monte Carlo
@@ -14,8 +14,7 @@ def naive_smc_hitting_time(graph, num_walks=None, num_trials=None, alpha=0.15):
     walk = RandomWalk(graph, alpha)
     hitting_time = np.zeros((N, N))
 
-    if num_trials is None:
-        num_trials = num_walks / float(N * N)
+    walks_per_pair = num_walks / float(N * N)
 
     for i in xrange(N):
         for j in xrange(N):
@@ -24,7 +23,8 @@ def naive_smc_hitting_time(graph, num_walks=None, num_trials=None, alpha=0.15):
                 hitting_time[i][j] = 1
                 continue
 
-            for _ in xrange(random_round(num_trials)):
+            nwalks = random_round(walks_per_pair)
+            for _ in xrange(nwalks):
                 node = i
                 while True:
                     if node == j:
@@ -35,61 +35,19 @@ def naive_smc_hitting_time(graph, num_walks=None, num_trials=None, alpha=0.15):
                         break
 
                     node = walk.step(node)
-            hitting_time[i][j] /= num_trials
+            hitting_time[i][j] /= nwalks
 
     return hitting_time
 
 
-def naive_psmc_hitting_time(graph, num_trials, alpha=0.15):
-    """
-    Naive: Tries `num_trial` random walks for each pair of nodes (i, j).
-    PSMC: Parallel Single-threaded Monte Carlo. Tries to do this with more
-    memory locality.
-    """
+def multihit_smc_hitting_time(graph, num_walks, alpha=0.15):
     N = graph.number_of_nodes()
-    walk = RandomWalk(graph, alpha)
-    hitting_time = np.zeros((N, N))
-    tokens = [[] for _ in xrange(N)]
-
-    # Initialize tokens
-    for i in xrange(N):
-        for j in xrange(N):
-            tokens[i].extend([(i, j) for _ in xrange(num_trials)])
-
-    # Iterate until done
-    more_moves = True
-    while more_moves:
-        more_moves = False
-        for i in xrange(N):
-            while tokens[i]:
-                t = tokens[i].pop()
-                if t[1] == i:
-                    hitting_time[t[0]][t[1]] += 1
-                    continue
-
-                if walk.terminates():
-                    continue
-
-                tokens[walk.step(i)].append(t)
-                more_moves = True
-
-    hitting_time /= num_trials
-    return hitting_time
-
-
-def multihit_smc_hitting_time(graph, num_trials=None, num_walks=None,
-                                   alpha=0.15):
-    if num_trials is None and num_walks is None:
-        raise ValueError("Must specify one of num_trials or num_walks")
-
-    N = graph.number_of_nodes()
-    if num_walks is None:
-        num_walks = N * N * num_trials
     walk = RandomWalk(graph, alpha)
     hitting_time = np.zeros((N, N))
 
     for i in xrange(N):
-        for _ in xrange(random_round(float(num_walks) / N)):
+        nwalks = random_round(float(num_walks) / N)
+        for _ in xrange(nwalks):
             node = i
             hits = np.zeros(N)
             while True:
@@ -98,19 +56,13 @@ def multihit_smc_hitting_time(graph, num_trials=None, num_walks=None,
                     break
                 node = walk.step(node)
             hitting_time[i] += hits
+        hitting_time[i] /= nwalks
 
-    hitting_time /= (num_walks / N)
     return hitting_time
 
 
-def multiwalk_smc_hitting_time(graph, num_trials=None, num_walks=None,
-                                alpha=0.15):
-    if num_trials is None and num_walks is None:
-        raise ValueError("Must specify one of num_trials or num_walks")
-
+def multiwalk_smc_hitting_time(graph, num_walks, alpha=0.15):
     N = graph.number_of_nodes()
-    if num_walks is None:
-        num_walks = N * N * num_trials
     walk = RandomWalk(graph, alpha)
     hits = np.zeros((N, N))
     walks = np.zeros(N)
