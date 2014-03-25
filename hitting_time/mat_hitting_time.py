@@ -22,7 +22,7 @@ def single_LS_step_length_ht(graph, j, alpha=0.15, python=False):
         return -np.linalg.solve(A, b)
 
 
-def personalized_LS_step_length_ht(graph, alpha=0.15):
+def personalized_LS_step_length_ht(graph, alpha=0.15, python=False):
     """ Computes personalized hitting time using a linear equation method.
 
     This is expected O(N^4).
@@ -41,11 +41,11 @@ def personalized_LS_step_length_ht(graph, alpha=0.15):
     N = graph.number_of_nodes()
     ht = np.zeros((N, N))
     for j in xrange(N):
-        ht[:, j] = single_LS_step_length_ht(graph, j, alpha)
+        ht[:, j] = single_LS_step_length_ht(graph, j, alpha, python)
     return ht
 
 
-def global_LS_step_length_ht(graph, weights=None, alpha=0.15):
+def global_LS_step_length_ht(graph, weights=None, alpha=0.15, python=False):
     """ Global hitting time using linear algebra methods.
 
     Args:
@@ -55,7 +55,7 @@ def global_LS_step_length_ht(graph, weights=None, alpha=0.15):
     """
     if not weights:
         weights = np.ones(graph.number_of_nodes())
-    ht = personalized_LS_step_length_ht(graph, alpha)
+    ht = personalized_LS_step_length_ht(graph, alpha, python)
     return np.dot(np.transpose(ht), np.array(utils.normalize(weights)))
 
 
@@ -78,7 +78,7 @@ def single_LS_prob_ht(graph, j, alpha=0.15, python=False):
         return np.linalg.solve(A, b)
 
 
-def personalized_LS_prob_ht(graph, alpha=0.15):
+def personalized_LS_prob_ht(graph, alpha=0.15, python=False):
     """ Computes personalized hitting time using a linear equation method.
 
     This is expected O(N^4).
@@ -97,11 +97,11 @@ def personalized_LS_prob_ht(graph, alpha=0.15):
     N = graph.number_of_nodes()
     ht = np.zeros((N, N))
     for j in xrange(N):
-        ht[:, j] = single_LS_prob_ht(graph, j, alpha)
+        ht[:, j] = single_LS_prob_ht(graph, j, alpha, python)
     return ht
 
 
-def global_LS_prob_ht(graph, weights=None, alpha=0.15):
+def global_LS_prob_ht(graph, weights=None, alpha=0.15, python=False):
     """ Global hitting time using linear algebra methods.
 
     Args:
@@ -111,7 +111,7 @@ def global_LS_prob_ht(graph, weights=None, alpha=0.15):
     """
     if not weights:
         weights = np.ones(graph.number_of_nodes())
-    ht = personalized_LS_prob_ht(graph, alpha)
+    ht = personalized_LS_prob_ht(graph, alpha, python)
     return np.dot(np.transpose(ht), np.array(utils.normalize(weights)))
 
 ###############################################################################
