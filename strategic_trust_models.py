@@ -236,6 +236,8 @@ def person_shortest_path(graph, num_strategic, sybil_pct,
                 shortest_paths[i, j] = 1 / paths[j]
             except ZeroDivisionError:
                 shortest_paths[i, j] = None
+            except KeyError:  # Means i is not connected to j?
+                shortest_paths[i, j] = 0  # Worst possible score
 
         # remove them again
         if i in saved_edges:
