@@ -11,7 +11,8 @@ def single_LS_step_length_ht(graph, j, alpha=0.15, python=False):
     N = graph.number_of_nodes()
     M = nx.to_numpy_matrix(graph)
     for i in xrange(N):  # Normalize
-        M[i] /= M[i].sum()
+        if M[i].sum() != 0:
+            M[i] /= M[i].sum()
     M[j] = 0  # Remove outedges of j
     A = np.eye(N) - (1 - alpha) * M
     b = np.repeat(1 - alpha, N)
@@ -67,7 +68,8 @@ def single_LS_prob_ht(graph, j, alpha=0.15, python=False):
     N = graph.number_of_nodes()
     M = nx.to_numpy_matrix(graph)
     for i in xrange(N):  # Normalize
-        M[i] /= M[i].sum()
+        if M[i].sum() != 0:
+            M[i] /= M[i].sum()
     M[j] = 0  # Remove outedges of j
     A = np.eye(N) - (1 - alpha) * M
     b = np.zeros(N)
