@@ -201,6 +201,26 @@ def ls_solve(M, b):
     return [row[-1] for row in m2] if gauss_jordan(m2) else None
 
 
+def gt_graph_from_nx(graph):
+    import graph_tool.all as gt
+    g = gt.Graph()
+    v = list(g.add_vertex(len(graph)))
+    weights = g.new_edge_property("double")
+    for i, j, d in graph.edges(data=True):
+        e = g.add_edge(v[i], v[j])
+        weights[e] = d['weight']
+    g.edge_properties['weight'] = weights
+    return g
+
+
+def fast_max_flow(gt_graph, i, j):
+    import graph_tool.all as gt
+    cap = gt_graph.edge_properties['weight']
+    res = gt.push_relabel_max_flow(
+        gt_graph, gt_graph.vertex(i), gt_graph.vertex(j), cap)
+    return sum(cap[e] - res[e] for e in gt_graph.vertex(j).in_edges())
+
+
 class RegenList(deque):
     """ Regenerating List, convenient for auto-regenerating values in bulk
 

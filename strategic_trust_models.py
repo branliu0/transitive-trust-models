@@ -180,6 +180,8 @@ def person_max_flow(graph, num_strategic, sybil_pct,
     if gensybils:
         generate_sybils(graph, strategic_agents, num_sybils)
 
+    # gt_graph = utils.gt_graph_from_nx(graph)
+
     # Need to reimplement max flow here because we only want to cut outedges
     # When we're not being evaluated.
     scores = np.zeros((N, N))
@@ -194,8 +196,8 @@ def person_max_flow(graph, num_strategic, sybil_pct,
             if i == j:
                 scores[i][j] = None
             else:
-                mf = nx.max_flow(graph, i, j, capacity='weight')
-                scores[i][j] = None if mf == 0 else mf
+                scores[i][j] = nx.max_flow(graph, i, j, capacity='weight')
+                # scores[i][j] = utils.fast_max_flow(gt_graph, i, j)
 
         # Now remove those edges again (a bit inefficiently)
         if i in saved_edges:
