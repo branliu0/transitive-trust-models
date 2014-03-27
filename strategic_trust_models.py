@@ -108,7 +108,7 @@ def person_pagerank(graph, num_strategic, sybil_pct,
         cut_outlinks(graph, strategic_agents)
         add_thin_edges(graph)  # do this BEFORE sybils!!
     if gensybils:
-        generate_sybils(graph, strategic_agents, min(1, sybil_pct * origN))
+        generate_sybils(graph, strategic_agents, int(min(1, sybil_pct * origN)))
 
     # We manually loop through personalize PageRank ourselves so that we can
     # avoid computing it for sybils.
