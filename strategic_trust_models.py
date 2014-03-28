@@ -12,7 +12,7 @@ import networkx as nx
 import numpy as np
 from scipy import stats
 
-from hitting_time.mat_hitting_time import single_LS_step_length_ht
+from hitting_time.mat_hitting_time import single_LS_prob_ht
 import trust_models as tm
 import utils
 
@@ -141,7 +141,7 @@ def global_hitting_time(graph, num_strategic, sybil_pct,
         # Adding is the same as applying a uniform restart distribution over
         # all nodes, including sybils
         # We negate to correct for the direction of correlation
-        ht[j] = np.sum(single_LS_step_length_ht(graph, j))
+        ht[j] = np.sum(single_LS_prob_ht(graph, j))
 
     return ht
 
@@ -161,7 +161,7 @@ def person_hitting_time(graph, num_strategic, sybil_pct,
     N = graph.number_of_nodes()
     ht = np.zeros((N, origN))
     for j in xrange(origN):
-        ht[:, j] = single_LS_step_length_ht(graph, j)
+        ht[:, j] = single_LS_prob_ht(graph, j)
 
     return ht[:origN, :origN]
 
@@ -171,14 +171,16 @@ def person_max_flow(graph, num_strategic, sybil_pct,
     graph = graph.copy()
     N = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
-    num_sybils = int(graph.number_of_nodes() * sybil_pct)
     saved_edges = {}
     if cutlinks:
         saved_edges = {a: graph.edges(a, data=True) for a in strategic_agents}
         cut_outlinks(graph, strategic_agents)
         add_thin_edges(graph)
-    if gensybils:
-        generate_sybils(graph, strategic_agents, num_sybils)
+
+    # For Max Flow, don't apply sybils since it is strategyproof to sybils
+    # if gensybils:
+        # num_sybils = int(graph.number_of_nodes() * sybil_pct)
+        # generate_sybils(graph, strategic_agents, num_sybils)
 
     # gt_graph = utils.gt_graph_from_nx(graph)
 
@@ -212,24 +214,27 @@ def person_max_flow(graph, num_strategic, sybil_pct,
 
 def person_shortest_path(graph, num_strategic, sybil_pct,
                          cutlinks=True, gensybils=True):
-    graph = graph.copy()
+    # For shortest path, we're not going to bother applying any manipulations,
+    # because shortest path is strategyproof to all of them.
+
+    # graph = graph.copy()
     origN = graph.number_of_nodes()
-    strategic_agents = random_strategic_agents(graph, num_strategic)
-    num_sybils = int(graph.number_of_nodes() * sybil_pct)
-    saved_edges = {}
-    if cutlinks:
-        saved_edges = {a: graph.edges(a, data=True) for a in strategic_agents}
-        cut_outlinks(graph, strategic_agents)
-        add_thin_edges(graph)
-    if gensybils:
-        generate_sybils(graph, strategic_agents, num_sybils)
+    # strategic_agents = random_strategic_agents(graph, num_strategic)
+    # num_sybils = int(graph.number_of_nodes() * sybil_pct)
+    # saved_edges = {}
+    # if cutlinks:
+        # saved_edges = {a: graph.edges(a, data=True) for a in strategic_agents}
+        # cut_outlinks(graph, strategic_agents)
+        # add_thin_edges(graph)
+    # if gensybils:
+        # generate_sybils(graph, strategic_agents, num_sybils)
 
     shortest_paths = np.zeros((origN, origN))
     for i in xrange(origN):
         # Add back in outedges
-        if i in saved_edges:
-            for a, b, d in saved_edges[i]:
-                graph[a][b]['inv_weight'] = d['inv_weight']
+        # if i in saved_edges:
+            # for a, b, d in saved_edges[i]:
+                # graph[a][b]['inv_weight'] = d['inv_weight']
 
         paths = nx.single_source_dijkstra_path_length(
             graph, i, weight='inv_weight')
@@ -242,8 +247,8 @@ def person_shortest_path(graph, num_strategic, sybil_pct,
                 shortest_paths[i, j] = 0  # Worst possible score
 
         # remove them again
-        if i in saved_edges:
-            for a, b, _ in saved_edges[i]:
-                graph[a][b]['inv_weight'] = 1 / THIN_EDGE_WEIGHT
+        # if i in saved_edges:
+            # for a, b, _ in saved_edges[i]:
+                # graph[a][b]['inv_weight'] = 1 / THIN_EDGE_WEIGHT
 
     return shortest_paths
