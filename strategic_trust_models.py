@@ -46,6 +46,9 @@ def generate_sybils(graph, agents, num_sybils, randomize_sybils=True):
     Randomizes the number of sybils so that not all the agents have the same
     number of sybils.
     """
+    if num_sybils <= 0:
+        return
+
     sybil_counter = max(graph.nodes()) + 1
 
     # Parametrize the uniform distribution for sybil counts
