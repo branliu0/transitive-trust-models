@@ -130,12 +130,12 @@ def global_hitting_time(graph, num_strategic, sybil_pct,
     graph = graph.copy()
     origN = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
+    num_sybils = int(graph.number_of_nodes() * sybil_pct)
     if cutlinks:
         cut_outlinks(graph, strategic_agents)
         add_thin_edges(graph)
     if gensybils:
-        if sybil_pct * origN > 1:
-            generate_sybils(graph, strategic_agents, int(sybil_pct * origN))
+        generate_sybils(graph, strategic_agents, num_sybils)
 
     ht = np.zeros(origN)
     for j in xrange(origN):
@@ -152,12 +152,12 @@ def person_hitting_time(graph, num_strategic, sybil_pct,
     graph = graph.copy()
     origN = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
-    num_sybils = int(graph.number_of_nodes() * sybil_pct)
     if cutlinks:
         cut_outlinks(graph, strategic_agents)
         add_thin_edges(graph)
     if gensybils:
-        generate_sybils(graph, strategic_agents, num_sybils)
+        if sybil_pct * origN > 1:
+            generate_sybils(graph, strategic_agents, int(sybil_pct * origN))
 
     N = graph.number_of_nodes()
     ht = np.zeros((N, origN))
