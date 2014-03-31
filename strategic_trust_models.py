@@ -63,7 +63,7 @@ def generate_sybils(graph, agents, num_sybils, randomize_sybils=True):
         edges = [(agent, sybil)
                  for sybil in xrange(sybil_counter, sybil_counter + sybil_count)]
         edges += map(lambda x: x[::-1], edges)  # Add reverse edges
-        graph.add_edges_from(edges, weight=1000, inv_weight=0.001)
+        graph.add_edges_from(edges, weight=1000000, inv_weight=0.000001)
         sybil_counter += sybil_count
 
 
