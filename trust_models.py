@@ -125,7 +125,7 @@ def max_flow(graph):
             if i == j:
                 scores[i][j] = None
             else:
-                mf = nx.max_flow(graph, i, j, capacity='weight')
+                mf = nx.maximum_flow_value(graph, i, j, capacity='weight')
                 scores[i][j] = None if mf == 0 else mf
         sys.stdout.write('.')
     sys.stdout.write("\n")

@@ -202,7 +202,7 @@ def person_max_flow(graph, num_strategic, sybil_pct,
             if i == j:
                 scores[i][j] = None
             else:
-                scores[i][j] = nx.max_flow(graph, i, j, capacity='weight')
+                scores[i][j] = nx.maximum_flow_value(graph, i, j, capacity='weight')
                 # scores[i][j] = utils.fast_max_flow(gt_graph, i, j)
 
         # Now remove those edges again (a bit inefficiently)
