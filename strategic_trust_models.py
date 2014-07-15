@@ -67,6 +67,8 @@ def generate_sybils(graph, agents, num_sybils, randomize_sybils=True):
         sybil_counter += sybil_count
 
 
+# WARNING: This is left here for compatibility purposes, but this should not
+# be used, as it messes up calculations!
 THIN_EDGE_WEIGHT=1e-5
 
 def add_thin_edges(graph, edge_weight=THIN_EDGE_WEIGHT):
@@ -78,6 +80,7 @@ def add_thin_edges(graph, edge_weight=THIN_EDGE_WEIGHT):
             if (i, j) not in edges:
                 graph.add_edge(i, j, weight=edge_weight,
                                inv_weight=(1 / edge_weight))
+
 
 
 def global_pagerank(graph, num_strategic, sybil_pct,
@@ -109,7 +112,6 @@ def person_pagerank(graph, num_strategic, sybil_pct,
     strategic_agents = random_strategic_agents(graph, num_strategic)
     if cutlinks:
         cut_outlinks(graph, strategic_agents)
-        add_thin_edges(graph)  # do this BEFORE sybils!!
     if gensybils:
         if sybil_pct * origN > 1:
             generate_sybils(graph, strategic_agents, int(sybil_pct * origN))
@@ -136,7 +138,6 @@ def global_hitting_time(graph, num_strategic, sybil_pct,
     num_sybils = int(graph.number_of_nodes() * sybil_pct)
     if cutlinks:
         cut_outlinks(graph, strategic_agents)
-        add_thin_edges(graph)
     if gensybils:
         generate_sybils(graph, strategic_agents, num_sybils)
 
@@ -157,7 +158,6 @@ def person_hitting_time(graph, num_strategic, sybil_pct,
     strategic_agents = random_strategic_agents(graph, num_strategic)
     if cutlinks:
         cut_outlinks(graph, strategic_agents)
-        add_thin_edges(graph)
     if gensybils:
         if sybil_pct * origN > 1:
             generate_sybils(graph, strategic_agents, int(sybil_pct * origN))
@@ -179,7 +179,6 @@ def person_max_flow(graph, num_strategic, sybil_pct,
     if cutlinks:
         saved_edges = {a: graph.edges(a, data=True) for a in strategic_agents}
         cut_outlinks(graph, strategic_agents)
-        add_thin_edges(graph)
 
     # For Max Flow, don't apply sybils since it is strategyproof to sybils
     # if gensybils:
@@ -199,16 +198,12 @@ def person_max_flow(graph, num_strategic, sybil_pct,
 
         # Now compute the max flow scores
         for j in xrange(N):
-            if i == j:
-                scores[i][j] = None
-            else:
-                scores[i][j] = nx.maximum_flow_value(graph, i, j, capacity='weight')
-                # scores[i][j] = utils.fast_max_flow(gt_graph, i, j)
+            if i != j:
+                scores[i, j] = nx.maximum_flow_value(graph, i, j, capacity='weight')
+                # scores[i, j] = utils.fast_max_flow(gt_graph, i, j)
 
-        # Now remove those edges again (a bit inefficiently)
-        if i in saved_edges:
-            for a, b, _ in saved_edges[i]:
-                graph[a][b]['weight'] = THIN_EDGE_WEIGHT
+        # Cut those outlinks again
+        cut_outlinks(graph, i)
 
         sys.stdout.write('.')
     sys.stdout.write("\n")
@@ -229,7 +224,6 @@ def person_shortest_path(graph, num_strategic, sybil_pct,
     # if cutlinks:
         # saved_edges = {a: graph.edges(a, data=True) for a in strategic_agents}
         # cut_outlinks(graph, strategic_agents)
-        # add_thin_edges(graph)
     # if gensybils:
         # generate_sybils(graph, strategic_agents, num_sybils)
 
@@ -250,9 +244,7 @@ def person_shortest_path(graph, num_strategic, sybil_pct,
             except KeyError:  # Means i is not connected to j?
                 shortest_paths[i, j] = 0  # Worst possible score
 
-        # remove them again
-        # if i in saved_edges:
-            # for a, b, _ in saved_edges[i]:
-                # graph[a][b]['inv_weight'] = 1 / THIN_EDGE_WEIGHT
+        # Cut those outlinks again
+        # cut_outlinks(graph, i)
 
     return shortest_paths
