@@ -122,11 +122,8 @@ def max_flow(graph):
     scores = np.zeros((num_nodes, num_nodes))
     for i in xrange(num_nodes):
         for j in xrange(num_nodes):
-            if i == j:
-                scores[i][j] = None
-            else:
-                mf = nx.maximum_flow_value(graph, i, j, capacity='weight')
-                scores[i][j] = None if mf == 0 else mf
+            if i != j:
+                scores[i, j] = nx.maximum_flow_value(graph, i, j, capacity='weight')
         sys.stdout.write('.')
     sys.stdout.write("\n")
     return scores
@@ -152,7 +149,7 @@ def shortest_path(graph):
     for i, d in nx_dict.iteritems():
         for j in xrange(num_nodes):
             try:
-                shortest_paths[i][j] = 1.0 / d[j]
+                shortest_paths[i, j] = 1.0 / d[j]
             except (KeyError, ZeroDivisionError):
-                shortest_paths[i][j] = None
+                shortest_paths[i, j] = np.inf
     return shortest_paths
