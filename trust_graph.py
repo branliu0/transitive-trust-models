@@ -4,8 +4,6 @@ from scipy import stats
 
 import utils
 
-INFINITY = float('inf')
-
 class TrustGraph(nx.DiGraph):
     """ A networkx.DiGraph object that represents a trust graph.
 
@@ -204,7 +202,7 @@ class TrustGraph(nx.DiGraph):
 
         for i in xrange(n):
             for j in edges[i]:
-                if num_samples == INFINITY:
+                if num_samples == np.inf:
                     weights[i][j] = expected_weight(i, j)
                 else:
                     weights[i][j] = sampled_weight(i, j)

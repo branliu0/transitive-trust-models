@@ -13,7 +13,6 @@ from scipy import stats
 import yaml
 
 from experiment import Experiment
-from trust_graph import INFINITY
 
 SAVE_FOLDER = os.path.join(os.path.dirname(__file__), '..', 'saved')
 
@@ -483,7 +482,7 @@ class SampleCountExperimentSet(ExperimentSet):
     name = 'sample_count'
     plot_xlabel = 'log2(samples per edge)'
 
-    DEFAULT_SAMPLE_COUNTS = [1, 2, 4, 8, 16, 32, 64, 128, INFINITY]
+    DEFAULT_SAMPLE_COUNTS = [1, 2, 4, 8, 16, 32, 64, 128, np.inf]
 
     def __init__(self, num_nodes, agent_type_prior, edge_strategy,
                  edges_per_node, edge_weight_strategy, num_experiments,
@@ -532,10 +531,10 @@ class SampleCountExperimentSet(ExperimentSet):
         """ Use a log-2 scale and handle values of infinity. """
         # Values of infinity are set as 3 ticks higher than the max value
         INF_OFFSET = 3
-        transformed = [math.log(x, 2) for x in xs if x != INFINITY]
+        transformed = [math.log(x, 2) for x in xs if x != np.inf]
         ticks = list(xs)
         try:
-            inf_idx = next(i for i, x in enumerate(xs) if x == INFINITY)
+            inf_idx = next(i for i, x in enumerate(xs) if x == np.inf)
             transformed.insert(inf_idx, max(transformed) + INF_OFFSET)
             ticks.insert(inf_idx, 'infinity')
         except StopIteration:
