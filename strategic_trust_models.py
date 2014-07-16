@@ -193,8 +193,7 @@ def person_max_flow(graph, num_strategic, sybil_pct,
     for i in xrange(N):
         # Add back in the edges for this agent, so we can get an actual score.
         if i in saved_edges:
-            for a, b, d in saved_edges[i]:
-                graph[a][b]['weight'] = d['weight']
+            graph.add_edges_from(saved_edges[i])
 
         # Now compute the max flow scores
         for j in xrange(N):
@@ -231,8 +230,7 @@ def person_shortest_path(graph, num_strategic, sybil_pct,
     for i in xrange(origN):
         # Add back in outedges
         # if i in saved_edges:
-            # for a, b, d in saved_edges[i]:
-                # graph[a][b]['inv_weight'] = d['inv_weight']
+            # graph.add_edges_from(saved_edges[i])
 
         paths = nx.single_source_dijkstra_path_length(
             graph, i, weight='inv_weight')
