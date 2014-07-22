@@ -31,7 +31,7 @@ def naive_smc_hitting_time(graph, num_walks, alpha=0.15):
                         hitting_time[i][j] += 1
                         break
 
-                    if walk.terminates():
+                    if walk.terminates() or node is None:
                         break
 
                     node = walk.step(node)
@@ -52,7 +52,7 @@ def multihit_smc_hitting_time(graph, num_walks, alpha=0.15):
             hits = np.zeros(N)
             while True:
                 hits[node] = 1
-                if walk.terminates():
+                if walk.terminates() or node is None:
                     break
                 node = walk.step(node)
             hitting_time[i] += hits
@@ -77,7 +77,7 @@ def multiwalk_smc_hitting_time(graph, num_walks, alpha=0.15):
                 steps.append(node)
                 counter[node] += 1
                 node = walk.step(node)
-                if walk.terminates():
+                if walk.terminates() or node is None:
                     break
             # Extract the analysis from the walk afterward, all at once
             seen = np.repeat(False, N)
