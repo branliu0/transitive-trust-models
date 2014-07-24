@@ -41,6 +41,8 @@ def naive_smc_hitting_time(graph, num_walks, alpha=0.15):
 
 
 def multihit_smc_hitting_time(graph, num_walks, alpha=0.15):
+    # ALERT: This currently doesn't return the correct value for dangling nodes
+    # Look into this later when it becomes important.
     N = graph.number_of_nodes()
     walk = RandomWalk(graph, alpha)
     hitting_time = np.zeros((N, N))
