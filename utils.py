@@ -2,6 +2,7 @@ import math
 import random
 from collections import deque
 
+import graph_tool.all as gt
 import networkx as nx
 import numpy as np
 from scipy import stats
@@ -202,7 +203,6 @@ def ls_solve(M, b):
 
 
 def gt_graph_from_nx(graph):
-    import graph_tool.all as gt
     g = gt.Graph()
     v = list(g.add_vertex(len(graph)))
     weights = g.new_edge_property("double")
@@ -214,10 +214,11 @@ def gt_graph_from_nx(graph):
 
 
 def fast_max_flow(gt_graph, i, j):
-    import graph_tool.all as gt
     cap = gt_graph.edge_properties['weight']
-    res = gt.push_relabel_max_flow(
-        gt_graph, gt_graph.vertex(i), gt_graph.vertex(j), cap)
+    # For some unknown reason, push_relabel is throwing some boost error, only
+    # when I compute the all_pairs max flow.
+    # res = gt.push_relabel_max_flow(gt_graph, gt_graph.vertex(i), gt_graph.vertex(j), cap)
+    res = gt.edmonds_karp_max_flow(gt_graph, gt_graph.vertex(i), gt_graph.vertex(j), cap)
     return sum(cap[e] - res[e] for e in gt_graph.vertex(j).in_edges())
 
 

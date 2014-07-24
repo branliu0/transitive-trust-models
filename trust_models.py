@@ -123,7 +123,8 @@ def max_flow(graph):
     for i in xrange(num_nodes):
         for j in xrange(num_nodes):
             if i != j:
-                scores[i, j] = nx.maximum_flow_value(graph, i, j, capacity='weight')
+                # scores[i, j] = nx.maximum_flow_value(graph, i, j, capacity='weight')
+                scores[i, j] = utils.fast_max_flow(graph.gt_graph, i, j)
         sys.stdout.write('.')
     sys.stdout.write("\n")
     return scores

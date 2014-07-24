@@ -81,6 +81,8 @@ class TrustGraph(nx.DiGraph):
                                   else min(1.0 / weight, MAX_INV_WEIGHT))
                     self.add_edge(i, j, weight=weight, inv_weight=inv_weight)
 
+        self.gt_graph = utils.gt_graph_from_nx(self)
+
     @staticmethod
     def initialize_agent_types(num_nodes, agent_type_prior):
         """
