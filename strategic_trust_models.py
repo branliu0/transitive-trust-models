@@ -84,7 +84,7 @@ def add_thin_edges(graph, edge_weight=THIN_EDGE_WEIGHT):
 
 
 def global_pagerank(graph, num_strategic, sybil_pct,
-                    cutlinks=True, gensybils=True):
+                    cutlinks=True, gensybils=True, return_strategic_agents=False):
     """ Global PageRank.
 
     Cut all outlinks + generate sybils.
@@ -97,11 +97,16 @@ def global_pagerank(graph, num_strategic, sybil_pct,
         cut_outlinks(graph, strategic_agents)
     if gensybils:
         generate_sybils(graph, strategic_agents, num_sybils)
-    return tm.pagerank(graph)[:N]
+    scores = tm.pagerank(graph)[:N]
+
+    if return_strategic_agents:
+        return scores, strategic_agents
+    else:
+        return scores
 
 
 def person_pagerank(graph, num_strategic, sybil_pct,
-                    cutlinks=True, gensybils=True):
+                    cutlinks=True, gensybils=True, return_strategic_agents=False):
     """ Personalized PageRank.
 
     Cut all outlinks + generate one sybil.
@@ -127,11 +132,15 @@ def person_pagerank(graph, num_strategic, sybil_pct,
                                       weight='weight').values()
         personalization[i] = 0
 
-    return scores[:origN, :origN]
+    if return_strategic_agents:
+        return scores[:origN, :origN], strategic_agents
+    else:
+        return scores[:origN, :origN]
 
 
 def global_hitting_time(graph, num_strategic, sybil_pct,
-                        cutlinks=True, gensybils=True):
+                        cutlinks=True, gensybils=True,
+                        return_strategic_agents=False):
     graph = graph.copy()
     origN = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
@@ -148,11 +157,15 @@ def global_hitting_time(graph, num_strategic, sybil_pct,
         # We negate to correct for the direction of correlation
         ht[j] = np.sum(single_LS_prob_ht(graph, j))
 
-    return ht
+    if return_strategic_agents:
+        return ht, strategic_agents
+    else:
+        return ht
 
 
 def person_hitting_time(graph, num_strategic, sybil_pct,
-                        cutlinks=True, gensybils=True):
+                        cutlinks=True, gensybils=True,
+                        return_strategic_agents=False):
     graph = graph.copy()
     origN = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
@@ -167,11 +180,14 @@ def person_hitting_time(graph, num_strategic, sybil_pct,
     for j in xrange(origN):
         ht[:, j] = single_LS_prob_ht(graph, j)
 
-    return ht[:origN, :origN]
+    if return_strategic_agents:
+        return ht[:origN, :origN], strategic_agents
+    else:
+        return ht[:origN, :origN]
 
 
 def person_max_flow(graph, num_strategic, sybil_pct,
-                    cutlinks=True, gensybils=True):
+                    cutlinks=True, gensybils=True, return_strategic_agents=False):
     graph = graph.copy()
     N = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
@@ -185,8 +201,6 @@ def person_max_flow(graph, num_strategic, sybil_pct,
         # num_sybils = int(graph.number_of_nodes() * sybil_pct)
         # generate_sybils(graph, strategic_agents, num_sybils)
 
-    # gt_graph = utils.gt_graph_from_nx(graph)
-
     # Need to reimplement max flow here because we only want to cut outedges
     # When we're not being evaluated.
     scores = np.zeros((N, N))
@@ -198,8 +212,8 @@ def person_max_flow(graph, num_strategic, sybil_pct,
         # Now compute the max flow scores
         for j in xrange(N):
             if i != j:
-                scores[i, j] = nx.maximum_flow_value(graph, i, j, capacity='weight')
-                # scores[i, j] = utils.fast_max_flow(gt_graph, i, j)
+                # scores[i, j] = nx.maximum_flow_value(graph, i, j, capacity='weight')
+                scores[i, j] = utils.fast_max_flow(graph.gt_graph, i, j)
 
         # Cut those outlinks again
         cut_outlinks(graph, i)
@@ -207,17 +221,21 @@ def person_max_flow(graph, num_strategic, sybil_pct,
         sys.stdout.write('.')
     sys.stdout.write("\n")
 
-    return scores
+    if return_strategic_agents:
+        return scores, strategic_agents
+    else:
+        return scores
 
 
 def person_shortest_path(graph, num_strategic, sybil_pct,
-                         cutlinks=True, gensybils=True):
+                         cutlinks=True, gensybils=True,
+                         return_strategic_agents=False):
     # For shortest path, we're not going to bother applying any manipulations,
     # because shortest path is strategyproof to all of them.
 
     # graph = graph.copy()
     origN = graph.number_of_nodes()
-    # strategic_agents = random_strategic_agents(graph, num_strategic)
+    strategic_agents = random_strategic_agents(graph, num_strategic)
     # num_sybils = int(graph.number_of_nodes() * sybil_pct)
     # saved_edges = {}
     # if cutlinks:
@@ -245,4 +263,7 @@ def person_shortest_path(graph, num_strategic, sybil_pct,
         # Cut those outlinks again
         # cut_outlinks(graph, i)
 
-    return shortest_paths
+    if return_strategic_agents:
+        return shortest_paths, strategic_agents
+    else:
+        return shortest_paths
