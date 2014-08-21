@@ -40,6 +40,7 @@ def cut_outlinks(graph, agents):
     graph.remove_edges_from(graph.edges(agents))
 
 IDEAL_RADIUS = 3  # Arbitrarily picked...
+SYBIL_WEIGHT = 10000
 
 def generate_sybils(graph, agents, num_sybils, randomize_sybils=True):
     """
@@ -63,7 +64,7 @@ def generate_sybils(graph, agents, num_sybils, randomize_sybils=True):
         edges = [(agent, sybil)
                  for sybil in xrange(sybil_counter, sybil_counter + sybil_count)]
         edges += map(lambda x: x[::-1], edges)  # Add reverse edges
-        graph.add_edges_from(edges, weight=1000000, inv_weight=0.000001)
+        graph.add_edges_from(edges, weight=SYBIL_WEIGHT, inv_weight=1/float(SYBIL_WEIGHT))
         sybil_counter += sybil_count
 
 
