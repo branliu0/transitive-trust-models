@@ -119,8 +119,8 @@ def person_pagerank(graph, num_strategic, sybil_pct,
     if cutlinks:
         cut_outlinks(graph, strategic_agents)
     if gensybils:
-        if sybil_pct * origN > 1:
-            generate_sybils(graph, strategic_agents, int(sybil_pct * origN))
+        if sybil_pct > 0:
+            generate_sybils(graph, strategic_agents, 1)
 
     # We manually loop through personalize PageRank ourselves so that we can
     # avoid computing it for sybils.
@@ -173,8 +173,8 @@ def person_hitting_time(graph, num_strategic, sybil_pct,
     if cutlinks:
         cut_outlinks(graph, strategic_agents)
     if gensybils:
-        if sybil_pct * origN > 1:
-            generate_sybils(graph, strategic_agents, int(sybil_pct * origN))
+        if sybil_pct > 0:
+            generate_sybils(graph, strategic_agents, 1)
 
     N = graph.number_of_nodes()
     ht = np.zeros((N, origN))
