@@ -154,3 +154,8 @@ def shortest_path(graph):
             except (KeyError, ZeroDivisionError):
                 shortest_paths[i, j] = np.inf
     return shortest_paths
+
+
+def average_ratings(graph):
+    return np.array([np.mean([x[2]['weight'] for x in graph.in_edges(node, data=True)])
+            for node in graph.nodes()])

@@ -268,3 +268,23 @@ def person_shortest_path(graph, num_strategic, sybil_pct,
         return shortest_paths, strategic_agents
     else:
         return shortest_paths
+
+
+def average_ratings(graph, num_strategic, sybil_pct,
+                    cutlinks=True, gensybils=True,
+                    return_strategic_agents=False):
+    graph = graph.copy()
+    N = graph.number_of_nodes()
+    strategic_agents = random_strategic_agents(graph, num_strategic)
+    num_sybils = int(graph.number_of_nodes() * sybil_pct)
+    if cutlinks:
+        cut_outlinks(graph, strategic_agents)
+    if gensybils:
+        generate_sybils(graph, strategic_agents, num_sybils)
+
+    scores = tm.average_ratings(graph)[:N]
+
+    if return_strategic_agents:
+        return scores, strategic_agents
+    else:
+        return scores
