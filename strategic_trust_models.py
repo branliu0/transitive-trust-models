@@ -36,13 +36,18 @@ def lowtype_strategic_agents(graph, num_strategic):
     return np.array(graph.nodes())[strategic_agents]
 
 
-def cut_outlinks(graph, agents):
-    graph.remove_edges_from(graph.edges(agents))
+def cut_outlinks(graph, agents, keep_zero=False):
+    if keep_zero:
+        for u, v in graph.edges(agents):
+            graph[u][v]['weight'] = 0
+    else:
+        graph.remove_edges_from(graph.edges(agents))
 
 IDEAL_RADIUS = 3  # Arbitrarily picked...
-SYBIL_WEIGHT = 10000
+SYBIL_WEIGHT = 1  # We're keeping weights in [0, 1] now.
 
-def generate_sybils(graph, agents, num_sybils, randomize_sybils=True):
+def generate_sybils(graph, agents, num_sybils, randomize_sybils=True,
+                    sybil_radius=IDEAL_RADIUS):
     """
     Randomizes the number of sybils so that not all the agents have the same
     number of sybils.
@@ -54,7 +59,7 @@ def generate_sybils(graph, agents, num_sybils, randomize_sybils=True):
 
     # Parametrize the uniform distribution for sybil counts
     max_radius = num_sybils - 1  # distance from
-    radius = min(max_radius, IDEAL_RADIUS)
+    radius = min(max_radius, sybil_radius)
     unif_a = num_sybils - radius
     unif_b = num_sybils + radius
 
@@ -93,7 +98,9 @@ def global_pagerank(graph, num_strategic, sybil_pct,
     graph = graph.copy()
     N = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
-    num_sybils = int(graph.number_of_nodes() * sybil_pct)
+    if sybil_pct is None:
+        sybil_pct = 0.3
+    num_sybils = int(sybil_pct * N)
     if cutlinks:
         cut_outlinks(graph, strategic_agents)
     if gensybils:
@@ -114,8 +121,9 @@ def person_pagerank(graph, num_strategic, sybil_pct,
     """
     graph = graph.copy()
     origN = graph.number_of_nodes()
-
     strategic_agents = random_strategic_agents(graph, num_strategic)
+    if sybil_pct is None:
+        sybil_pct = 0.3
     if cutlinks:
         cut_outlinks(graph, strategic_agents)
     if gensybils:
@@ -145,7 +153,9 @@ def global_hitting_time(graph, num_strategic, sybil_pct,
     graph = graph.copy()
     origN = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
-    num_sybils = int(graph.number_of_nodes() * sybil_pct)
+    if sybil_pct is None:
+        sybil_pct = 0.3
+    num_sybils = int(origN * sybil_pct)
     if cutlinks:
         cut_outlinks(graph, strategic_agents)
     if gensybils:
@@ -170,6 +180,8 @@ def person_hitting_time(graph, num_strategic, sybil_pct,
     graph = graph.copy()
     origN = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
+    if sybil_pct is None:
+        sybil_pct = 0.3
     if cutlinks:
         cut_outlinks(graph, strategic_agents)
     if gensybils:
@@ -187,7 +199,7 @@ def person_hitting_time(graph, num_strategic, sybil_pct,
         return ht[:origN, :origN]
 
 
-def person_max_flow(graph, num_strategic, sybil_pct,
+def person_max_flow(graph, num_strategic, sybil_pct=0,
                     cutlinks=True, gensybils=True, return_strategic_agents=False):
     graph = graph.copy()
     N = graph.number_of_nodes()
@@ -228,7 +240,7 @@ def person_max_flow(graph, num_strategic, sybil_pct,
         return scores
 
 
-def person_shortest_path(graph, num_strategic, sybil_pct,
+def person_shortest_path(graph, num_strategic, sybil_pct=0,
                          cutlinks=True, gensybils=True,
                          return_strategic_agents=False):
     # For shortest path, we're not going to bother applying any manipulations,
@@ -276,11 +288,13 @@ def average_ratings(graph, num_strategic, sybil_pct,
     graph = graph.copy()
     N = graph.number_of_nodes()
     strategic_agents = random_strategic_agents(graph, num_strategic)
-    num_sybils = int(graph.number_of_nodes() * sybil_pct)
+    if sybil_pct is None:
+        sybil_pct = 5
+    Ns = int(sybil_pct * N)
     if cutlinks:
-        cut_outlinks(graph, strategic_agents)
+        cut_outlinks(graph, strategic_agents, keep_zero=True)
     if gensybils:
-        generate_sybils(graph, strategic_agents, num_sybils)
+        generate_sybils(graph, strategic_agents, Ns)
 
     scores = tm.average_ratings(graph)[:N]
 
