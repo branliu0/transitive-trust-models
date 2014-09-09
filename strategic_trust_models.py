@@ -225,8 +225,8 @@ def person_max_flow(graph, num_strategic, sybil_pct=0,
         # Now compute the max flow scores
         for j in xrange(N):
             if i != j:
-                # scores[i, j] = nx.maximum_flow_value(graph, i, j, capacity='weight')
-                scores[i, j] = utils.fast_max_flow(graph.gt_graph, i, j)
+                scores[i, j] = nx.maximum_flow_value(graph, i, j, capacity='weight')
+                # scores[i, j] = utils.fast_max_flow(graph.gt_graph, i, j)
 
         # Cut those outlinks again
         cut_outlinks(graph, i)
