@@ -142,6 +142,13 @@ def resample_unique(rv, existing_values=[]):
             return sample
 
 
+def unique_sample(rv, size):
+    found = []
+    while len(found) < size:
+        found.append(resample_unique(rv, found))
+    return found
+
+
 def random_weighted_graph(num_nodes, edge_prob, weight_dist='uniform'):
     """ Returns a Erdos-Renyi graph with edge weights. """
     g = nx.gnp_random_graph(num_nodes, edge_prob, directed=True)

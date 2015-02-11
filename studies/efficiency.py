@@ -79,7 +79,7 @@ def compute_informativeness(agent_types, scores, is_global):
         return corrs.mean()
 
 
-def compute_efficiency(agent_types, scores, is_global, K=NUM_CHOICES):
+def compute_efficiency(agent_types, scores, is_global, strategic_agents=[], K=NUM_CHOICES):
     N = len(agent_types)
     def prob(i):
         # Probability of the i-th index element being the highest ranked element
@@ -93,8 +93,12 @@ def compute_efficiency(agent_types, scores, is_global, K=NUM_CHOICES):
 
     if is_global:
         scores = np.repeat([scores], N, axis=0)
-    effs = np.zeros(N)
+    effs = []
     for i, row in enumerate(scores):
+        # Only average over non-strategic agents
+        if i in strategic_agents:
+            continue
+
         removed_indices = [j for j, x in enumerate(row) if x is None]
         if removed_indices:
             print 'Warning: saw %d None values' % len(removed_indices)
@@ -102,9 +106,9 @@ def compute_efficiency(agent_types, scores, is_global, K=NUM_CHOICES):
         vals = [val for j, val in enumerate(row) if j not in removed_indices]
         ats = [val for j, val in enumerate(agent_types) if j not in removed_indices]
         ranks = stats.rankdata(vals, method='max')
-        effs[i] = sum(prob(rank) * ats[j]
-                        for j, rank in enumerate(ranks))
-    return effs.mean()
+        effs.append(sum(prob(rank) * ats[j]
+                        for j, rank in enumerate(ranks)))
+    return np.mean(effs)
 
 
 def efficiency_by_sybil_pct(num_iters, num_strategic=None, sybil_pcts=None,

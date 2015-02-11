@@ -101,21 +101,27 @@ def algo4(graph, num_walks, alpha=0.15):
     walks = np.zeros(N)
 
     walk_hits = np.zeros((N, N))
-    walk_visited = np.zeros(N)
+    walk_visits = np.zeros(N)
 
     for i in xrange(N):
         for _ in xrange(random_round(float(num_walks) / N)):
             walk_hits[:] = 0
-            walk_visited[:] = 0
+            walk_visits[:] = 0
+            steps = []
             node = i
             while True:
-                walk_visited[node] = 1
-                walk_hits[:, node] = walk_visited
+                steps.append(node)
                 node = walk.step(node)
                 if walk.terminates() or node is None:
                     break
+
+            for ii, v_i in enumerate(steps):
+                walk_visits[v_i] = 1
+                for jj, v_j in enumerate(steps[ii:]):
+                    walk_hits[v_i, v_j] = 1
+
             hits += walk_hits
-            walks += walk_visited
+            walks += walk_visits
 
     return np.divide(hits, np.outer(walks, np.ones(N)), dtype=float)
 
@@ -259,20 +265,26 @@ def timed_algo4(graph, time_limit, alpha=0.15):
         for i in xrange(N):
             walk_hits[:] = 0
             walk_visited[:] = 0
+            steps = []
             node = i
             while True:
-                walk_visited[node] = 1
-                walk_hits[:, node] = walk_visited
+                steps.append(node)
                 node = walk.step(node)
                 if walk.terminates() or node is None:
                     break
+
+            for ii, v_i in enumerate(steps):
+                walk_visited[v_i] = 1
+                for jj, v_j in enumerate(steps[ii:]):
+                    walk_hits[v_i, v_j] = 1
+
             hits += walk_hits
             walks += walk_visited
 
             walk_count += 1
             elapsed = time.clock() - start_time
             if elapsed > time_limit:
-                print 'Algo4: Simulated %d walks' % walk_count
+                print 'Algo4 (new): Simulated %d walks' % walk_count
                 done = True
                 break
 

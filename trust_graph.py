@@ -219,4 +219,4 @@ class TrustGraph(nx.DiGraph):
     @staticmethod
     def g50():
         """ Convenience method for quickly getting a graph of 50 nodes. """
-        return TrustGraph(50, 'uniform', 'cluster', 30, 'sample2', 8)
+        return TrustGraph(50, 'uniform', 'cluster', 30, 'sample', 8)
