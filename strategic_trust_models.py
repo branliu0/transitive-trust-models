@@ -143,7 +143,7 @@ def person_pagerank(graph, num_strategic, sybil_pct,
         sybil_pct = 0.3
     if cutlinks:
         saved_edges = {a: graph.edges(a, data=True) for a in strategic_agents}
-        cut_outlinks(graph, strategic_agents, leave_one=True)
+        cut_outlinks(graph, strategic_agents)
         after_edges = {a: graph.edges(a, data=True) for a in strategic_agents}
     if gensybils:
         generate_sybils(graph, strategic_agents, int(sybil_pct * origN))
@@ -214,7 +214,7 @@ def person_hitting_time(graph, num_strategic, sybil_pct, cutlinks=True,
     if sybil_pct is None:
         sybil_pct = 0.3
     if cutlinks:
-        cut_outlinks(graph, strategic_agents, leave_one=True)
+        cut_outlinks(graph, strategic_agents)
     if gensybils:
         generate_sybils(graph, strategic_agents, int(sybil_pct * origN),
                         sybil_star=True)
@@ -243,7 +243,7 @@ def person_max_flow(graph, num_strategic, sybil_pct=0, cutlinks=True,
     saved_edges = {}
     if cutlinks:
         saved_edges = {a: graph.edges(a, data=True) for a in strategic_agents}
-        cut_outlinks(graph, strategic_agents, leave_one=True)
+        cut_outlinks(graph, strategic_agents, leave_one=True)  # TODO: Are you sure you want leave_one=True?
         after_edges = {a: graph.edges(a, data=True) for a in strategic_agents}
 
     # For Max Flow, don't apply sybils since it is strategyproof to sybils
