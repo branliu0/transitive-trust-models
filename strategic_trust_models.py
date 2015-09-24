@@ -63,6 +63,9 @@ def generate_sybils(graph, agents, num_sybils, randomize_sybils=True,
     """
     Randomizes the number of sybils so that not all the agents have the same
     number of sybils.
+
+    sybil_cloud: adds edges between all sybils too
+    sybil_star: if True, then only includes edges from node to sybils.
     """
     if num_sybils <= 0:
         return
